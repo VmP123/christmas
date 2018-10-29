@@ -14,8 +14,9 @@ export default class Player {
 		this.direction = 1;
 		this.speed = {x: 0, y: 0};
 		this.targetSpeed = {x: 0, y: 0};
-		this.acceleration = 0.2;
+		this.acceleration = {x: 0.2, y: 0.16} ;
 		this.maxSpeed = {x: 0.7, y: 0};
+		this.speed.y += 0.16;
 
 		this.x = 60;
 		this.y = 96;
@@ -72,22 +73,27 @@ export default class Player {
 			var origSpeedX = this.speed.x;
 		
 			if (this.speed.x < this.targetSpeed.x)
-				this.speed.x += this.acceleration;
+				this.speed.x += this.acceleration.x;
 			else if (this.speed.x > this.targetSpeed.x)
-				this.speed.x -= this.acceleration;
+				this.speed.x -= this.acceleration.x;
 			
 			if (Math.sign(origSpeedX - this.targetSpeed.x) != Math.sign(this.speed.x - this.targetSpeed.x))
 				this.speed.x = this.targetSpeed.x;
 		}
-	
-		this.speed.y += 0.16; // Gravity
+
+		this.speed.y += this.acceleration.y; // Gravity
 		this.y = this._y + this.speed.y * delta;
 		for (var i = 0; i < this.collisionTiles.length; i++) {
-			if (this.testCollision(this, this.collisionTiles[i])) {
-				var intersectionLength = this.getCollisionDepth(this.y, this.height, this.collisionTiles[i].y, this.collisionTiles[i].height);
-				this.y = this._y - (intersectionLength * Math.sign(this.speed.y));
+			if (this.testCollision({x: this.x, y: this.y, height: this.height + 1, width: this.width }, this.collisionTiles[i])) {
+				var intersectionLength = this.getCollisionDepth(this._y, this.height, this.collisionTiles[i].y, this.collisionTiles[i].height);
+				this.y = this._y - ((intersectionLength) * Math.sign(this.speed.y));
+
+				// Floor collision
+				if (Math.sign(this.speed.y) === 1)
+					this.canJump = true;
+
 				this.speed.y = 0;
-				this.canJump = true;
+
 				break;
 			}
 		}
@@ -102,9 +108,14 @@ export default class Player {
 			}
 		}
 
+		// Play running animation
 		if (this.speed.x !== 0) {
 			this.sprite.update(delta);
 		}
+	}
+
+	isOnFloor() {
+		return false;
 	}
 
 	testCollision(a, b) {
