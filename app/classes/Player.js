@@ -16,7 +16,6 @@ export default class Player {
 		this.targetSpeed = {x: 0, y: 0};
 		this.acceleration = {x: 0.2, y: 0.16} ;
 		this.maxSpeed = {x: 0.7, y: 0};
-		this.speed.y += 0.16;
 
 		this.x = 60;
 		this.y = 96;
