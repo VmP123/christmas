@@ -13,15 +13,26 @@ export default class Game {
 
 	gameLoop(delta) {
 		this.player.update(delta)
+		
+		if (this.isOffScreen(this.player))
+			this.player.respawn();
+	}
+
+	isOffScreen(gameObject) {
+		return (gameObject.x > this.tiledMap.width) ||
+			(gameObject.x + gameObject.width < 0) ||
+			(gameObject.y > this.tiledMap.height);
 	}
 
 	getTilePointsByLayer(tiledMap, name) {
 		var points = [];
 		
-		tiledMap.layers.find(function (layer) {
+		var layer = tiledMap.layers.find(function (layer) {
 			return layer.name == name;
-		}).tiles.forEach(function (tile, index) {
-			if (tile != null)
+		})
+		
+		layer.tiles.forEach(function (tile, index) {
+			if (tile != null && index < layer.map.width * layer.map.height)
 				points.push({x: index % tiledMap._width, y: Math.floor(index / tiledMap._width)});
 		});
 		
@@ -60,16 +71,16 @@ export default class Game {
 		PIXI.loader
 			.add('Joulu.tmx')
 			.load(() => {
-				var tiledMap = new PIXI.extras.TiledMap('Joulu.tmx');
-				var tilePoints = this.getTilePointsByLayer(tiledMap, 'Ground');
-				
+				this.tiledMap = new PIXI.extras.TiledMap('Joulu.tmx');
+				var tilePoints = this.getTilePointsByLayer(this.tiledMap, 'Ground');
+
 				this.collisionTiles = tilePoints.map(function (tp) {
-					return { x: tp.x * tiledMap.tileWidth, y: tp.y * tiledMap.tileHeight, width: tiledMap.tileWidth, height: tiledMap.tileHeight }
-				});
+					return { x: tp.x * this.tiledMap.tileWidth, y: tp.y * this.tiledMap.tileHeight, width: this.tiledMap.tileWidth, height: this.tiledMap.tileHeight }
+				}.bind(this));
 				
 				this.player.collisionTiles = this.collisionTiles;
 
-				this.app.stage.addChild(tiledMap);
+				this.app.stage.addChild(this.tiledMap);
 				this.app.stage.addChild(this.player.sprite);
 				
 				document.addEventListener('keydown', this.onKeyDown.bind(this));
