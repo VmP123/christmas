@@ -16,8 +16,6 @@ export default class Player {
 
 		this.acceleration = {x: 0.2, y: 0.16};
 		this.maxSpeed = {x: 0.7, y: 0};
-
-		this.respawn()
 	}
 	
 	set x(x) {
@@ -62,9 +60,9 @@ export default class Player {
 		this.canJump = false;
 	}
 	
-	respawn() {
-		this.x = 60;
-		this.y = 96;
+	respawn(x, y) {
+		this.x = x;
+		this.y = y;
 		this.direction = 1;
 		this.speed = {x: 0, y: 0};
 		this.targetSpeed = {x: 0, y: 0};

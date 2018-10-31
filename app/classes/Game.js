@@ -15,7 +15,7 @@ export default class Game {
 		this.player.update(delta)
 		
 		if (this.isOffScreen(this.player))
-			this.player.respawn();
+			this.player.respawn(this.startObject.x, this.startObject.y);
 	}
 
 	isOffScreen(gameObject) {
@@ -37,6 +37,13 @@ export default class Game {
 		});
 		
 		return points;
+	}
+
+	getObjects(tiledMap, name) {
+		var layer = tiledMap.layers.find(function (layer) {
+			return layer.name == name;
+		})
+		return layer.objects;
 	}
 
 	onKeyDown(key) {
@@ -78,7 +85,21 @@ export default class Game {
 					return { x: tp.x * this.tiledMap.tileWidth, y: tp.y * this.tiledMap.tileHeight, width: this.tiledMap.tileWidth, height: this.tiledMap.tileHeight }
 				}.bind(this));
 				
+				var objects = this.getObjects(this.tiledMap, 'Objects');
+				this.startObject = objects.find(function (o) {
+					return o.type === 'start';
+				});
+				this.enemyObjects = objects.filter(function (o) {
+					return o.type === 'enemy';
+				});
+				this.collectibleObjects = objects.filter(function (o) {
+					return o.type === 'collectible';
+				});
+
+				console.log(this.startObject, this.enemyObjects, this.collectibleObjects);
+
 				this.player.collisionTiles = this.collisionTiles;
+				this.player.respawn(this.startObject.x, this.startObject.y);
 
 				this.app.stage.addChild(this.tiledMap);
 				this.app.stage.addChild(this.player.sprite);
