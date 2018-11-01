@@ -2,6 +2,7 @@ export default class Player {
 	constructor() {
 		var baseTexture = PIXI.BaseTexture.fromImage('tonttu.png');
 
+
 		this.width = 8;
 		this.height = 8;
 
@@ -10,7 +11,6 @@ export default class Player {
 		frames.push(new PIXI.Texture(baseTexture, new PIXI.Rectangle(8, 8, this.width, this.height)));
 
 		this.sprite = new PIXI.extras.AnimatedSprite(frames, false);
-		this.sprite.anchor.x = 0.5;
 		this.sprite.gotoAndPlay(0);
 		this.sprite.animationSpeed = 0.1;
 
@@ -38,7 +38,8 @@ export default class Player {
 
 	set direction(direction) {
 		this._direction = direction;
-		this.sprite.scale.x = direction;
+		this.sprite.textures[0].rotate = direction == 1 ? 0 : 12;
+		this.sprite.textures[1].rotate = direction == 1 ? 0 : 12;
 	}
 	
 	get direction() {
@@ -66,7 +67,7 @@ export default class Player {
 		this.direction = 1;
 		this.speed = {x: 0, y: 0};
 		this.targetSpeed = {x: 0, y: 0};
-		this.canJump = true;
+		this.canJump = false;
 	}
 
 	update (delta) {
@@ -83,6 +84,8 @@ export default class Player {
 				this.speed.x = this.targetSpeed.x;
 		}
 
+		this.canJump = false;
+		
 		this.speed.y += this.acceleration.y; // Gravity
 		this.y = this._y + this.speed.y * delta;
 		for (var i = 0; i < this.collisionTiles.length; i++) {

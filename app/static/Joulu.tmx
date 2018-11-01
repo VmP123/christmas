@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.0" tiledversion="1.1.5" orientation="orthogonal" renderorder="right-down" width="16" height="16" tilewidth="8" tileheight="8" infinite="0" nextobjectid="10">
+<map version="1.0" tiledversion="1.1.5" orientation="orthogonal" renderorder="right-down" width="16" height="16" tilewidth="8" tileheight="8" infinite="0" nextobjectid="12">
  <tileset firstgid="1" name="Joulu_tileset" tilewidth="8" tileheight="8" tilecount="32" columns="8">
   <image source="Joulu_tileset.png" width="64" height="32"/>
  </tileset>
@@ -68,9 +68,24 @@
    <point/>
   </object>
   <object id="7" type="enemy" x="96" y="56">
+   <properties>
+    <property name="radius" value="20"/>
+   </properties>
+   <point/>
+  </object>
+  <object id="7" type="enemy" x="56" y="80">
+   <properties>
+    <property name="radius" value="28"/>
+   </properties>
    <point/>
   </object>
   <object id="9" type="collectible" x="20" y="40">
+   <point/>
+  </object>
+  <object id="10" type="collectible" x="116" y="56">
+   <point/>
+  </object>
+  <object id="11" type="collectible" x="28" y="80">
    <point/>
   </object>
  </objectgroup>
