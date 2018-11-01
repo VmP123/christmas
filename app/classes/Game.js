@@ -143,7 +143,7 @@ export default class Game {
 				
 				this.enemies = [];
 				this.enemyObjects.forEach(function (co) {
-					var enemy = new Enemy('tonttu.png', this.spriteWidth, this.spriteHeight, 0, 1);
+					var enemy = new Enemy('enemy.png', this.spriteWidth, this.spriteHeight, 0, 2);
 					enemy.startX = co.x;
 					enemy.y = co.y;
 					enemy.radius = +co.properties.radius;

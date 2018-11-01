@@ -39,7 +39,7 @@ export default class GameObject {
 		this._direction = direction;
 		this.sprite.textures.forEach(function (texture) {
 			texture.rotate = direction == 1 ? 0 : 12;
-		})
+		});
 	}
 	
 	get direction() {

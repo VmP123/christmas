@@ -38,8 +38,9 @@ export default class Player {
 
 	set direction(direction) {
 		this._direction = direction;
-		this.sprite.textures[0].rotate = direction == 1 ? 0 : 12;
-		this.sprite.textures[1].rotate = direction == 1 ? 0 : 12;
+		this.sprite.textures.forEach(function (texture) {
+			texture.rotate = direction == 1 ? 0 : 12;
+		});
 	}
 	
 	get direction() {
