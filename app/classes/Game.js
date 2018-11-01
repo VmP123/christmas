@@ -133,7 +133,7 @@ export default class Game {
 
 				this.collectibles = [];
 				this.collectibleObjects.forEach(function (co) {
-					var collectible = new Collectible('collectible.png', this.spriteWidth, this.spriteHeight, 1);
+					var collectible = new Collectible('collectible.png', this.spriteWidth, this.spriteHeight, 0, 1);
 					collectible.x = co.x;
 					collectible.y = co.y;
 					this.app.stage.addChild(collectible.sprite);
@@ -143,7 +143,7 @@ export default class Game {
 				
 				this.enemies = [];
 				this.enemyObjects.forEach(function (co) {
-					var enemy = new Enemy('tonttu.png', this.spriteWidth, this.spriteHeight, 1);
+					var enemy = new Enemy('tonttu.png', this.spriteWidth, this.spriteHeight, 0, 1);
 					enemy.startX = co.x;
 					enemy.y = co.y;
 					enemy.radius = +co.properties.radius;

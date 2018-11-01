@@ -1,7 +1,7 @@
 import Utils from './Utils.js'
 
 export default class GameObject {
-	constructor(imagePath, width, height, frameCount) {
+	constructor(imagePath, width, height, row, frameCount) {
 		var baseTexture = PIXI.BaseTexture.fromImage(imagePath);
 
 		this.width = width;
@@ -9,7 +9,7 @@ export default class GameObject {
 
 		var frames = [];
 		for (var i = 0; i < frameCount; i++) {
-			frames.push(new PIXI.Texture(baseTexture, new PIXI.Rectangle(i * width, 0, width, height)));
+			frames.push(new PIXI.Texture(baseTexture, new PIXI.Rectangle(i * width, row * height, width, height)));
 		}
 
 		this.sprite = new PIXI.extras.AnimatedSprite(frames, false);
