@@ -2,8 +2,7 @@ import * as PIXI from 'pixi.js';
 import 'pixi-tiledmap';
 
 import Player from './Player.js'
-import Enemy from './Enemy.js'
-import Collectible from './Collectible.js'
+import Level from './Level.js'
 
 export default class Game {
 	constructor() {
@@ -19,51 +18,29 @@ export default class Game {
 		this.player.update(delta)
 
 		if (this.isOffScreen(this.player))
-			this.player.respawn(this.startObject.x, this.startObject.y);
+			this.player.respawn(this.level.startObject.x, this.level.startObject.y);
 		
-		for (var i = this.collectibles.length - 1; i >= 0; i--) {
-			var collectible = this.collectibles[i];
+		for (var i = this.level.collectibles.length - 1; i >= 0; i--) {
+			var collectible = this.level.collectibles[i];
 			
 			collectible.update(delta);
 			if (collectible.testCollision(this.player)) {
 				this.app.stage.removeChild(collectible.sprite);
-				this.collectibles.splice(i, 1);
+				this.level.collectibles.splice(i, 1);
 			}
 		};
 
-		this.enemies.forEach(function (enemy) {
+		this.level.enemies.forEach(function (enemy) {
 			enemy.update(delta)
 			if (enemy.testCollision(this.player))
-				this.player.respawn(this.startObject.x, this.startObject.y);
+				this.player.respawn(this.level.startObject.x, this.level.startObject.y);
 		}.bind(this));
 	}
 
 	isOffScreen(gameObject) {
-		return (gameObject.x > this.tiledMap.width) ||
+		return (gameObject.x > this.level.tiledMap.width) ||
 			(gameObject.x + gameObject.width < 0) ||
-			(gameObject.y > this.tiledMap.height);
-	}
-
-	getTilePointsByLayer(tiledMap, name) {
-		var points = [];
-		
-		var layer = tiledMap.layers.find(function (layer) {
-			return layer.name === name;
-		})
-		
-		layer.tiles.forEach(function (tile, index) {
-			if (tile != null && index < layer.map.width * layer.map.height)
-				points.push({x: index % tiledMap._width, y: Math.floor(index / tiledMap._width)});
-		});
-		
-		return points;
-	}
-
-	getObjects(tiledMap, name) {
-		var layer = tiledMap.layers.find(function (layer) {
-			return layer.name === name;
-		})
-		return layer.objects;
+			(gameObject.y > this.level.tiledMap.height);
 	}
 
 	onKeyDown(key) {
@@ -88,10 +65,6 @@ export default class Game {
 		this.app.stage.scale.y = scale;
 	}
 
-	fixPosition(gameObject) {
-		gameObject.y -= this.spriteHeight;
-		gameObject.x -= this.spriteWidth * 0.5;
-	}
 	
 	init() {
 		this.app = new PIXI.Application(this.width, this.height);
@@ -100,64 +73,23 @@ export default class Game {
 
 		this.player = new Player();
 		
-		PIXI.loader
-			.add('Joulu.tmx')
-			.load(() => {
-				this.tiledMap = new PIXI.extras.TiledMap('Joulu.tmx');
-				var tilePoints = this.getTilePointsByLayer(this.tiledMap, 'Ground');
+		this.level = new Level('Joulu.tmx');
+		this.level.load().then(() => {
+			this.app.stage.addChild(this.level.tiledMap);
 
-				this.collisionTiles = tilePoints.map(function (tp) {
-					return { x: tp.x * this.tiledMap.tileWidth, y: tp.y * this.tiledMap.tileHeight, width: this.tiledMap.tileWidth, height: this.tiledMap.tileHeight }
-				}.bind(this));
-				
-				var objects = this.getObjects(this.tiledMap, 'Objects');
-				objects.forEach(function (o) {
-					this.fixPosition(o);
-				}.bind(this));
+			this.level.collectibles.forEach(collectibe => this.app.stage.addChild(collectibe.sprite) );
+			this.level.enemies.forEach(enemy => this.app.stage.addChild(enemy.sprite));
 
-				this.startObject = objects.find(function (o) {
-					return o.type === 'start';
-				});
-				this.enemyObjects = objects.filter(function (o) {
-					return o.type === 'enemy';
-				});
-				this.collectibleObjects = objects.filter(function (o) {
-					return o.type === 'collectible';
-				});
+			this.player.collisionTiles = this.level.collisionTiles;
+			this.player.respawn(this.level.startObject.x, this.level.startObject.y);
+			this.app.stage.addChild(this.player.sprite);
 
-				this.player.collisionTiles = this.collisionTiles;
-				this.player.respawn(this.startObject.x, this.startObject.y);
-
-				this.app.stage.addChild(this.tiledMap);
-				this.app.stage.addChild(this.player.sprite);
-
-				this.collectibles = [];
-				this.collectibleObjects.forEach(function (co) {
-					var collectible = new Collectible('collectible.png', this.spriteWidth, this.spriteHeight, 0, 1);
-					collectible.x = co.x;
-					collectible.y = co.y;
-					this.app.stage.addChild(collectible.sprite);
-					
-					this.collectibles.push(collectible);
-				}.bind(this));
-				
-				this.enemies = [];
-				this.enemyObjects.forEach(function (co) {
-					var enemy = new Enemy('enemy.png', this.spriteWidth, this.spriteHeight, 0, 2);
-					enemy.startX = co.x;
-					enemy.y = co.y;
-					enemy.radius = +co.properties.radius;
-					this.app.stage.addChild(enemy.sprite);
-					
-					this.enemies.push(enemy);
-				}.bind(this));
-				
-				document.addEventListener('keydown', this.onKeyDown.bind(this));
-				document.addEventListener('keyup', this.onKeyUp.bind(this));
-				
-				this.app.ticker.add(function(delta) {
-					this.gameLoop(delta);
-				}.bind(this));
+			document.addEventListener('keydown', this.onKeyDown.bind(this));
+			document.addEventListener('keyup', this.onKeyUp.bind(this));
+			
+			this.app.ticker.add(delta => {
+				this.gameLoop(delta);
 			});
+		});
 	}
 }
