@@ -3,6 +3,7 @@ import 'pixi-tiledmap';
 
 import Player from './Player.js'
 import Level from './Level.js'
+//import SpriteManager from './SpriteManager.js'
 
 export default class Game {
 	constructor() {
@@ -54,9 +55,9 @@ export default class Game {
 	
 	onKeyUp(key) {
 		if (key.keyCode === 37 && this.player.direction === -1)
-			this.player.targetSpeed.x = 0;
+			this.player.move(0);
 		if (key.keyCode === 39 && this.player.direction === 1)
-			this.player.targetSpeed.x = 0;
+			this.player.move(0);
 	}	
 	
 	setScale(scale) {
@@ -86,10 +87,13 @@ export default class Game {
 
 			document.addEventListener('keydown', this.onKeyDown.bind(this));
 			document.addEventListener('keyup', this.onKeyUp.bind(this));
-			
+
 			this.app.ticker.add(delta => {
 				this.gameLoop(delta);
 			});
 		});
+		
+		//var spriteManager = new SpriteManager('sprites.json');
+		
 	}
 }

@@ -1,4 +1,5 @@
 import Utils from './Utils.js'
+import ExtendedAnimatedSprite from './ExtendedAnimatedSprite.js'
 
 export default class GameObject {
 	constructor(imagePath, width, height, row, frameCount) {
@@ -12,7 +13,7 @@ export default class GameObject {
 			frames.push(new PIXI.Texture(baseTexture, new PIXI.Rectangle(i * width, row * height, width, height)));
 		}
 
-		this.sprite = new PIXI.extras.AnimatedSprite(frames, false);
+		this.sprite = new ExtendedAnimatedSprite(frames, false);	
 		this.sprite.gotoAndPlay(0);
 		this.sprite.animationSpeed = 0.1;
 	}
