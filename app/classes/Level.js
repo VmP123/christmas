@@ -4,8 +4,6 @@ import Collectible from './Collectible.js'
 export default class Level {
 	constructor(tiledFile) {
 		this.tiledFile = tiledFile;
-		this.spriteWidth = 8;
-		this.spriteHeight = 8;
 	}
 
 	load() {
@@ -46,8 +44,8 @@ export default class Level {
 	}
 
 	fixPosition(gameObject) {
-		gameObject.y -= this.spriteHeight;
-		gameObject.x -= this.spriteWidth * 0.5;
+		gameObject.y -= this.tiledMap.tileHeight;
+		gameObject.x -= this.tiledMap.tileWidth * 0.5;
 	}
 
 	getTilePointsByLayer(tiledMap, name) {
