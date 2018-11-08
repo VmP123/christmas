@@ -1,5 +1,4 @@
 import Utils from './Utils.js'
-import ExtendedAnimatedSprite from './ExtendedAnimatedSprite.js'
 
 export default class GameObject {
 	constructor(sprite) {

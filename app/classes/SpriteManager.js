@@ -37,18 +37,19 @@ export default class SpriteManager {
 							var clonedFrame = frame.clone();
 							clonedFrame.rotate = 12;
 							return clonedFrame;
-						});
-						frames = frames.concat(horizontalMirroredFrames);
+						});						
 						
 						var horizontalMirroredSequences = {};
 						Object.keys(sprite.sequences).forEach(key => {
 							var sequence = sprite.sequences[key];
 							horizontalMirroredSequences[key + 'HorizontalMirrored'] = 
-								sequence.map(sequenceStep => sequenceStep + sequence.length);
+								sequence.map(sequenceStep => sequenceStep + frames.length);
 						});
+
+						frames = frames.concat(horizontalMirroredFrames);
 						Object.assign(sprite.sequences, horizontalMirroredSequences);
 					}
-					
+
 					if (!this.frameRowsByImage[sprite.image])
 						this.frameRowsByImage[sprite.image] = {};
 

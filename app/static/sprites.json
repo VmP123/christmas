@@ -5,12 +5,11 @@
 	},
 	"sprites": {
 		"player": {
-			"image": "tonttu.png",
+			"image": "player.png",
 			"row": 0,
 			"sequences": {
 				"idle": [0],
-				"jump": [0],
-				"run": [0, 1]
+				"run": [1, 2]
 			},
 			"boundingBox": {
 				"x": 0,
