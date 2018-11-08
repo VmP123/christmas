@@ -1,7 +1,9 @@
 import GameObject from './GameObject.js'
 
 export default class Collectible extends GameObject {
-	constructor(imagePath, width, height, row, frameCount) {
-		super(imagePath, width, height, row, frameCount);
+	constructor(sprite) {
+		super(sprite);
+		this.sequenceName = 'default';
+		this.direction = 1;
 	}
 }

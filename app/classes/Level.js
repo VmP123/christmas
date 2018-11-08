@@ -32,25 +32,6 @@ export default class Level {
 				this.collectibleObjects = objects.filter(function (o) {
 					return o.type === 'collectible';
 				});
-	
-				this.collectibles = [];
-				this.collectibleObjects.forEach(co => {
-					var collectible = new Collectible('collectible.png', this.spriteWidth, this.spriteHeight, 0, 1);
-					collectible.x = co.x;
-					collectible.y = co.y;
-					
-					this.collectibles.push(collectible);
-				});
-				
-				this.enemies = [];
-				this.enemyObjects.forEach(co => {
-					var enemy = new Enemy('enemy.png', this.spriteWidth, this.spriteHeight, 0, 2);
-					enemy.startX = co.x;
-					enemy.y = co.y;
-					enemy.radius = +co.properties.radius;
-					
-					this.enemies.push(enemy);
-				});
 
 				resolve();
 			});
@@ -82,5 +63,28 @@ export default class Level {
 		});
 		
 		return points;
+	}
+	
+	set spriteManager(spriteManager) {
+		this._spriteManager = spriteManager;
+		
+		this.collectibles = [];
+		this.collectibleObjects.forEach(co => {
+			var collectible = new Collectible(spriteManager.createExtendedAnimatedSprite('big_present'))
+			collectible.x = co.x;
+			collectible.y = co.y;
+			
+			this.collectibles.push(collectible);
+		});
+		
+		this.enemies = [];
+		this.enemyObjects.forEach(co => {
+			var enemy = new Enemy(spriteManager.createExtendedAnimatedSprite('enemy'));
+			enemy.startX = co.x;
+			enemy.y = co.y;
+			enemy.radius = +co.properties.radius;
+			
+			this.enemies.push(enemy);
+		});
 	}
 }

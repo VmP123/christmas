@@ -1,24 +1,11 @@
 import ExtendedAnimatedSprite from './ExtendedAnimatedSprite.js'
+import GameObject from './GameObject.js'
 
-export default class Player {
-	constructor() {
-		var baseTexture = PIXI.BaseTexture.fromImage('tonttu.png');
+export default class Player extends GameObject {
+	constructor(sprite) {
+		super(sprite);
 
-		this.width = 8;
-		this.height = 8;
-
-		var frames = [];
-		frames.push(new PIXI.Texture(baseTexture, new PIXI.Rectangle(0, 0, this.width, this.height)));
-		frames.push(new PIXI.Texture(baseTexture, new PIXI.Rectangle(8, 0, this.width, this.height)));
-		frames.push(new PIXI.Texture(baseTexture, new PIXI.Rectangle(8, 8, this.width, this.height)));
-
-		this.sprite = new ExtendedAnimatedSprite(frames, false);
-		this.sprite.sequences = {
-			run: [1, 2], 
-			idle: [0]
-		};
-		this.sprite.animationSpeed = 0.1;
-		
+		this.sprite.animationSpeed = 0.1;		
 		this.acceleration = {x: 0.2, y: 0.16};
 		this.maxSpeed = {x: 0.7, y: 0};
 	}
@@ -40,18 +27,7 @@ export default class Player {
 	get y() {
 		return this.sprite.y;
 	}
-
-	set direction(direction) {
-		this._direction = direction;
-		this.sprite.textures.forEach(function (texture) {
-			texture.rotate = direction == 1 ? 0 : 12;
-		});
-	}
-	
-	get direction() {
-		return this._direction;
-	}
-    
+ 
     move(direction) {
 		if (direction) {
 			this.targetSpeed.x = this.maxSpeed.x * Math.sign(direction);
@@ -93,12 +69,14 @@ export default class Player {
 			if (Math.sign(origSpeedX - this.targetSpeed.x) != Math.sign(this.speed.x - this.targetSpeed.x))
 				this.speed.x = this.targetSpeed.x;
 		}
-		this.sprite.sequenceName = this.speed.x ? 'run' : 'idle';
+		this.sequenceName = this.speed.x ? 'run' : 'idle';
 
 		this.canJump = false;
 		
 		this.speed.y += this.acceleration.y; // Gravity
 		this.y = this._y + this.speed.y * delta;
+		
+		// Floor and ceiling collision
 		for (var i = 0; i < this.collisionTiles.length; i++) {
 			if (this.testCollision({x: this.x, y: this.y, height: this.height + 1, width: this.width }, this.collisionTiles[i])) {
 				var intersectionLength = this.getCollisionDepth(this._y, this.height, this.collisionTiles[i].y, this.collisionTiles[i].height);
@@ -114,7 +92,10 @@ export default class Player {
 			}
 		}
 
+	
 		this.x = this._x + this.speed.x * delta;
+		
+		// Wall collision
 		for (var i = 0; i < this.collisionTiles.length; i++) {
 			if (this.testCollision(this, this.collisionTiles[i])) {
 				var intersectionLength = this.getCollisionDepth(this.x, this.width, this.collisionTiles[i].x, this.collisionTiles[i].width);

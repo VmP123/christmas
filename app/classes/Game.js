@@ -3,7 +3,7 @@ import 'pixi-tiledmap';
 
 import Player from './Player.js'
 import Level from './Level.js'
-//import SpriteManager from './SpriteManager.js'
+import SpriteManager from './SpriteManager.js'
 
 export default class Game {
 	constructor() {
@@ -31,11 +31,11 @@ export default class Game {
 			}
 		};
 
-		this.level.enemies.forEach(function (enemy) {
+		this.level.enemies.forEach(enemy => {
 			enemy.update(delta)
 			if (enemy.testCollision(this.player))
 				this.player.respawn(this.level.startObject.x, this.level.startObject.y);
-		}.bind(this));
+		});
 	}
 
 	isOffScreen(gameObject) {
@@ -66,18 +66,23 @@ export default class Game {
 		this.app.stage.scale.y = scale;
 	}
 
-	
 	init() {
 		this.app = new PIXI.Application(this.width, this.height);
 		document.body.appendChild(this.app.view);	
 		this.setScale(this.scale);
 
-		this.player = new Player();
+		
 		
 		this.level = new Level('Joulu.tmx');
-		this.level.load().then(() => {
-			this.app.stage.addChild(this.level.tiledMap);
+		this.spriteManager = new SpriteManager('sprites.json');
+		Promise.all([
+			this.spriteManager.load(),
+			this.level.load()
+		]).then(() => {
+			this.level.spriteManager = this.spriteManager;
 
+			this.player = new Player(this.spriteManager.createExtendedAnimatedSprite('player'));
+			this.app.stage.addChild(this.level.tiledMap);
 			this.level.collectibles.forEach(collectibe => this.app.stage.addChild(collectibe.sprite) );
 			this.level.enemies.forEach(enemy => this.app.stage.addChild(enemy.sprite));
 
@@ -92,8 +97,5 @@ export default class Game {
 				this.gameLoop(delta);
 			});
 		});
-		
-		//var spriteManager = new SpriteManager('sprites.json');
-		
 	}
 }

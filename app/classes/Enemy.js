@@ -1,9 +1,10 @@
 import GameObject from './GameObject.js'
 
 export default class Enemy extends GameObject {
-	constructor(imagePath, width, height, row, frameCount) {
-		super(imagePath, width, height, row, frameCount);
+	constructor(sprite) {
+		super(sprite);
 		this.speed = 0.25;
+		this.sequenceName = 'walk';
 		this.direction = 1;
 	}
 	

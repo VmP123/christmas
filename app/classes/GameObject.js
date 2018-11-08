@@ -2,19 +2,8 @@ import Utils from './Utils.js'
 import ExtendedAnimatedSprite from './ExtendedAnimatedSprite.js'
 
 export default class GameObject {
-	constructor(imagePath, width, height, row, frameCount) {
-		var baseTexture = PIXI.BaseTexture.fromImage(imagePath);
-
-		this.width = width;
-		this.height = height;
-
-		var frames = [];
-		for (var i = 0; i < frameCount; i++) {
-			frames.push(new PIXI.Texture(baseTexture, new PIXI.Rectangle(i * width, row * height, width, height)));
-		}
-
-		this.sprite = new ExtendedAnimatedSprite(frames, false);	
-		this.sprite.gotoAndPlay(0);
+	constructor(sprite) {
+		this.sprite = sprite;
 		this.sprite.animationSpeed = 0.1;
 	}
 	
@@ -36,15 +25,40 @@ export default class GameObject {
 		return this.sprite.y;
 	}
 
+	get width() {
+		return this.sprite.width;
+	}
+	
+	get height() {
+		return this.sprite.height;
+	}
+	
 	set direction(direction) {
 		this._direction = direction;
-		this.sprite.textures.forEach(function (texture) {
-			texture.rotate = direction == 1 ? 0 : 12;
-		});
+		this.setSpriteSequenceName();
 	}
 	
 	get direction() {
 		return this._direction;
+	}
+	
+	set sequenceName(sequenceName) {
+		this._sequenceName = sequenceName;
+		this.setSpriteSequenceName()
+	}
+	
+	get sequenceName() {
+		return this._sequenceName;
+	}
+
+	setSpriteSequenceName() {
+		if (!this.direction || !this.sequenceName)
+			return;
+		
+		if (this.direction === 1)
+			this.sprite.sequenceName = this._sequenceName;
+		else
+			this.sprite.sequenceName = this._sequenceName + 'HorizontalMirrored';
 	}
 	
 	update(delta) {
@@ -52,6 +66,7 @@ export default class GameObject {
 	}
 	
 	testCollision (target) {
+		// TODO: BoundingBox
 		return Utils.testCollision(this, target);
 	}
 }
