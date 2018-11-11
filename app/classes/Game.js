@@ -7,11 +7,14 @@ import SpriteManager from './SpriteManager.js'
 
 export default class Game {
 	constructor() {
-		this.spriteWidth = 8
-		this.spriteHeight = 8
-		this.width = 640;
-		this.height = 640;
-		this.scale = 5;
+		this.scale = 5;	
+		this.tileWidth = 8;
+		this.tileHeight = 8;
+		this.horizontalTileCount = 16;
+		this.verticalTileCount = 16;
+		this.width = this.tileWidth * this.horizontalTileCount * this.scale;
+		this.height = this.tileHeight * this.verticalTileCount * this.scale;
+
 		this.init();
 	}
 
@@ -71,8 +74,6 @@ export default class Game {
 		document.body.appendChild(this.app.view);	
 		this.setScale(this.scale);
 
-		
-		
 		this.level = new Level('Joulu.tmx');
 		this.spriteManager = new SpriteManager('sprites.json');
 		Promise.all([
@@ -81,11 +82,11 @@ export default class Game {
 		]).then(() => {
 			this.level.spriteManager = this.spriteManager;
 
-			this.player = new Player(this.spriteManager.createExtendedAnimatedSprite('player'));
 			this.app.stage.addChild(this.level.tiledMap);
 			this.level.collectibles.forEach(collectibe => this.app.stage.addChild(collectibe.sprite) );
 			this.level.enemies.forEach(enemy => this.app.stage.addChild(enemy.sprite));
 
+			this.player = new Player(this.spriteManager.createExtendedAnimatedSprite('player'));
 			this.player.collisionTiles = this.level.collisionTiles;
 			this.player.respawn(this.level.startObject.x, this.level.startObject.y);
 			this.app.stage.addChild(this.player.sprite);
