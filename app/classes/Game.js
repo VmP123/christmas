@@ -4,17 +4,11 @@ import 'pixi-tiledmap';
 import Player from './Player.js'
 import Level from './Level.js'
 import SpriteManager from './SpriteManager.js'
+import Config from './Config.js'
 
 export default class Game {
 	constructor() {
-		this.scale = 5;	
-		this.tileWidth = 8;
-		this.tileHeight = 8;
-		this.horizontalTileCount = 16;
-		this.verticalTileCount = 16;
-		this.width = this.tileWidth * this.horizontalTileCount * this.scale;
-		this.height = this.tileHeight * this.verticalTileCount * this.scale;
-
+		PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST; // scaling does not work correctly if set later
 		this.init();
 	}
 
@@ -64,22 +58,27 @@ export default class Game {
 	}	
 	
 	setScale(scale) {
-		PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
 		this.app.stage.scale.x = scale;
 		this.app.stage.scale.y = scale;
 	}
-
+	
 	init() {
-		this.app = new PIXI.Application(this.width, this.height);
-		document.body.appendChild(this.app.view);	
-		this.setScale(this.scale);
-
+		this.config = new Config('config.json');
 		this.level = new Level('Joulu.tmx');
 		this.spriteManager = new SpriteManager('sprites.json');
+			
 		Promise.all([
-			this.spriteManager.load(),
-			this.level.load()
+			this.config.load(),
+			this.level.load(),
+			this.spriteManager.load()
 		]).then(() => {
+			this.applicationWidth = this.config.tileWidth * this.config.horizontalTileCount * this.config.scale;
+			this.applicationHeight = this.config.tileHeight * this.config.verticalTileCount * this.config.scale;
+
+			this.app = new PIXI.Application(this.applicationWidth, this.applicationHeight);
+			this.setScale(this.config.scale);
+			document.body.appendChild(this.app.view);	
+			
 			this.level.spriteManager = this.spriteManager;
 
 			this.app.stage.addChild(this.level.tiledMap);

@@ -11,7 +11,7 @@ export default class Level {
 			PIXI.loader.add(this.tiledFile).load(() => {
 				this.tiledMap = new PIXI.extras.TiledMap(this.tiledFile);
 				var tilePoints = this.getTilePointsByLayer(this.tiledMap, 'Ground');
-	
+
 				this.collisionTiles = tilePoints.map(function (tp) {
 					return { x: tp.x * this.tiledMap.tileWidth, y: tp.y * this.tiledMap.tileHeight, width: this.tiledMap.tileWidth, height: this.tiledMap.tileHeight }
 				}.bind(this));
