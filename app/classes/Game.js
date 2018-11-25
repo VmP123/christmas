@@ -68,8 +68,6 @@ export default class Game {
 		loader.add('levels', 'levels.json');
 		this.spriteManager = new SpriteManager('sprites.json');
 
-		this.levelId = 0;
-
 		Promise.all([
 			loader.load(),
 			this.spriteManager.load()
@@ -91,6 +89,7 @@ export default class Game {
 				this.gameLoop(delta);
 			});
 
+			this.levelId = 0;
 			this.loadLevel(this.levelId).then(() => this.startLevel())
 		});
 	}
