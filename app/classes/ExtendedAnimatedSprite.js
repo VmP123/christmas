@@ -64,12 +64,12 @@ export default class ExtendedAnimatedSprite extends PIXI.extras.AnimatedSprite {
             this.updateTexture();
         }
     }
-	
+
     get currentFrame()
-    {	
+    {
 		if (!this.sequence)
 			return super.currentFrame;
-		
+
 		var currentSequenceFrame = Math.floor(this._currentTime) % this.sequence.length;
 		let currentFrame = this.sequence[currentSequenceFrame];
         if (currentFrame < 0)
@@ -78,23 +78,23 @@ export default class ExtendedAnimatedSprite extends PIXI.extras.AnimatedSprite {
         }
         return currentFrame;
     }
-	
+
 	set sequence(sequence) {
 		this._sequence = sequence;
 		this.updateTexture();
 	}
-	
+
 	get sequence() {
 		return this._sequence;
 	}
-	
+
 	set sequenceName(sequenceName) {
         if (this.sequenceName !== sequenceName) {
             this._sequenceName = sequenceName;
             this.sequence = this.sequences[sequenceName];
         }
 	}
-	
+
 	get sequenceName() {
 		return this._sequenceName;
 	}
