@@ -1,0 +1,5 @@
+export const STATE = {
+	LOADING: 1,
+	GAMEON: 2,
+	LEVELCOMPLETED: 3
+}
