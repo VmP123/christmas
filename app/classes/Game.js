@@ -4,7 +4,6 @@ import 'pixi-tiledmap';
 import Player from './Player.js'
 import Level from './Level.js'
 import SpriteManager from './SpriteManager.js'
-import Config from './Config.js'
 import {STATE} from '../enums.js'
 
 export default class Game {
@@ -19,7 +18,7 @@ export default class Game {
 
 		this.player.update(delta)
 
-		if (this.isOffScreen(this.player))
+		if (this.player.isOffScreen(this.level))
 			this.player.respawn(this.level.startObject.x, this.level.startObject.y);
 
 		for (let i = this.level.collectibles.length - 1; i >= 0; i--) {
@@ -40,12 +39,6 @@ export default class Game {
 			if (enemy.testCollision(this.player))
 				this.player.respawn(this.level.startObject.x, this.level.startObject.y);
 		});
-	}
-
-	isOffScreen(gameObject) {
-		return (gameObject.x > this.level.tiledMap.width) ||
-			(gameObject.x + gameObject.width < 0) ||
-			(gameObject.y > this.level.tiledMap.height);
 	}
 
 	onKeyDown(key) {
@@ -70,17 +63,20 @@ export default class Game {
 	}
 
 	init() {
-		this.config = new Config('config.json');
-		this.levelId = 0;
+		var loader = new PIXI.loaders.Loader();
+		loader.add('config', 'config.json');
+		loader.add('levels', 'levels.json');
 		this.spriteManager = new SpriteManager('sprites.json');
 
-		this.levels = ['01.tmx', '02.tmx', '03.tmx', '04.tmx'];
+		this.levelId = 0;
 
 		Promise.all([
-			this.config.load(),
-			this.spriteManager.load(),
-			this.loadLevel(this.levelId)
+			loader.load(),
+			this.spriteManager.load()
 		]).then(() => {
+			this.config = loader.resources.config.data;
+			this.levels = loader.resources.levels.data;
+
 			this.applicationWidth = this.config.tileWidth * this.config.horizontalTileCount * this.config.scale;
 			this.applicationHeight = this.config.tileHeight * this.config.verticalTileCount * this.config.scale;
 
@@ -88,14 +84,14 @@ export default class Game {
 			this.setScale(this.config.scale);
 			document.body.appendChild(this.app.view);
 
-			this.startLevel();
-
 			document.addEventListener('keydown', this.onKeyDown.bind(this));
 			document.addEventListener('keyup', this.onKeyUp.bind(this));
 
 			this.app.ticker.add(delta => {
 				this.gameLoop(delta);
 			});
+
+			this.loadLevel(this.levelId).then(() => this.startLevel())
 		});
 	}
 

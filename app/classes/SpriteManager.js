@@ -5,13 +5,13 @@ export default class SpriteManager {
 	constructor(spritePackFile) {
 		this.spritePackFile = spritePackFile;
 	}
-	
+
 	load() {
-		return new Promise((resolve, reject) => {
+		return new Promise((resolve) => {
 			var loader = new PIXI.loaders.Loader();
 			loader.add('spritePack', this.spritePackFile).load(() => {
 				this.spritePack = loader.resources.spritePack.data;
-				
+
 				this.width = this.spritePack.common.width;
 				this.height = this.spritePack.common.height;
 
@@ -20,29 +20,29 @@ export default class SpriteManager {
 					var sprite = this.spritePack.sprites[key];
 					var baseTexture = PIXI.BaseTexture.fromImage(sprite.image);
 					var maxFrameId = this.getMaxFrameIdFromSequences(sprite.sequences);
-					
+
 					var frames = [];
 					for(var i = 0; i <= maxFrameId; i++) {
 						var texture = new PIXI.Texture(baseTexture, new PIXI.Rectangle(
-							i * this.width, 
+							i * this.width,
 							sprite.row * this.height,
 							this.width,
 							this.height
 						));
-						frames.push(texture);	
+						frames.push(texture);
 					}
-					
+
 					if (sprite.generateHorizontalMirrored) {
 						var horizontalMirroredFrames = frames.map(frame => {
 							var clonedFrame = frame.clone();
 							clonedFrame.rotate = 12;
 							return clonedFrame;
-						});						
-						
+						});
+
 						var horizontalMirroredSequences = {};
 						Object.keys(sprite.sequences).forEach(key => {
 							var sequence = sprite.sequences[key];
-							horizontalMirroredSequences[key + 'HorizontalMirrored'] = 
+							horizontalMirroredSequences[key + 'HorizontalMirrored'] =
 								sequence.map(sequenceStep => sequenceStep + frames.length);
 						});
 
@@ -55,12 +55,12 @@ export default class SpriteManager {
 
 					this.frameRowsByImage[sprite.image][sprite.row] = frames;
 				})
-				
+
 				resolve();
 			})
 		})
 	}
-	
+
 	getMaxFrameIdFromSequences(sequences) {
 		var maxId = 0;
 		Object.keys(sequences).forEach(key => {
@@ -70,8 +70,8 @@ export default class SpriteManager {
 		})
 		return maxId;
 	}
-	
-	createExtendedAnimatedSprite(spriteName) {		
+
+	createExtendedAnimatedSprite(spriteName) {
 		var sprite = this.spritePack.sprites[spriteName];
 		var frames = this.frameRowsByImage[sprite.image][sprite.row];
 

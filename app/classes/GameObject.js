@@ -60,6 +60,12 @@ export default class GameObject {
 			this.sprite.sequenceName = this._sequenceName + 'HorizontalMirrored';
 	}
 
+	isOffScreen(level) {
+		return (this.x > level.tiledMap.width) ||
+			(this.x + this.width < 0) ||
+			(this.y > level.tiledMap.height);
+	}
+
 	update(delta) {
 		this.sprite.update(delta);
 	}
