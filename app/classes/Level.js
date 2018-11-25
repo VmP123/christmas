@@ -8,7 +8,7 @@ export default class Level {
 	}
 
 	load() {
-		return new Promise((resolve, reject) => {
+		return new Promise((resolve) => {
 			// Is already loaded?
 			if (PIXI.loader.resources[this.tiledFile]) {
 				this.setData(false);

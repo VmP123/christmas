@@ -7,7 +7,7 @@ export default class Enemy extends GameObject {
 		this.sequenceName = 'walk';
 		this.direction = 1;
 	}
-	
+
 	update(delta) {
 		this.x = this._x + this.speed * delta;
 
@@ -20,19 +20,19 @@ export default class Enemy extends GameObject {
 			this.direction *= -1;
 			this.x = this.minX;
 		}
-		
+
 		super.update(delta);
 	}
-	
+
 	set startX(startX) {
 		this._startX = startX;
 		this._x = startX;
 	}
-	
+
 	get startX() {
 		return this._startX;
 	}
-	
+
 	get minX() {
 		return this.startX - this.radius;
 	}

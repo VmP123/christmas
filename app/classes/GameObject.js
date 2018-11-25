@@ -5,7 +5,7 @@ export default class GameObject {
 		this.sprite = sprite;
 		this.sprite.animationSpeed = 0.1;
 	}
-	
+
 	set x(x) {
 		this._x = x;
 		this.sprite.x = Math.floor(x);
@@ -27,25 +27,25 @@ export default class GameObject {
 	get width() {
 		return this.sprite.width;
 	}
-	
+
 	get height() {
 		return this.sprite.height;
 	}
-	
+
 	set direction(direction) {
 		this._direction = direction;
 		this.setSpriteSequenceName();
 	}
-	
+
 	get direction() {
 		return this._direction;
 	}
-	
+
 	set sequenceName(sequenceName) {
 		this._sequenceName = sequenceName;
 		this.setSpriteSequenceName()
 	}
-	
+
 	get sequenceName() {
 		return this._sequenceName;
 	}
@@ -53,17 +53,17 @@ export default class GameObject {
 	setSpriteSequenceName() {
 		if (!this.direction || !this.sequenceName)
 			return;
-		
+
 		if (this.direction === 1)
 			this.sprite.sequenceName = this._sequenceName;
 		else
 			this.sprite.sequenceName = this._sequenceName + 'HorizontalMirrored';
 	}
-	
+
 	update(delta) {
 		this.sprite.update(delta);
 	}
-	
+
 	testCollision (target) {
 		// TODO: BoundingBox
 		return Utils.testCollision(this, target);
