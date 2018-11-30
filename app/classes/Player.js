@@ -56,19 +56,20 @@ export default class Player extends GameObject {
 	}
 
 	update (delta) {
+		// If has not reached the target speed
 		if (this.speed.x !== this.targetSpeed.x)
 		{
-			var origSpeedX = this.speed.x;
+			const origSpeedX = this.speed.x;
 
 			if (this.speed.x < this.targetSpeed.x)
 				this.speed.x += this.acceleration.x;
 			else if (this.speed.x > this.targetSpeed.x)
 				this.speed.x -= this.acceleration.x;
 
-			if (Math.sign(origSpeedX - this.targetSpeed.x) != Math.sign(this.speed.x - this.targetSpeed.x))
+			const hasReachedTheTargetSpeed = Math.sign(origSpeedX - this.targetSpeed.x) != Math.sign(this.speed.x - this.targetSpeed.x);
+			if (hasReachedTheTargetSpeed)
 				this.speed.x = this.targetSpeed.x;
 		}
-		this.sequenceName = this.speed.x ? 'run' : 'idle';
 
 		this.canJump = false;
 
@@ -76,9 +77,10 @@ export default class Player extends GameObject {
 		this.y = this._y + this.speed.y * delta;
 
 		// Floor and ceiling collision
-		for (var i = 0; i < this.collisionTiles.length; i++) {
+		for (let i = 0; i < this.collisionTiles.length; i++) {
 			if (this.testCollision({x: this.x, y: this.y, height: this.height + 1, width: this.width }, this.collisionTiles[i])) {
-				var intersectionLength = this.getCollisionDepth(this._y, this.height, this.collisionTiles[i].y, this.collisionTiles[i].height);
+				// Fix vertical position
+				const intersectionLength = this.getCollisionDepth(this._y, this.height, this.collisionTiles[i].y, this.collisionTiles[i].height);
 				this.y = Math.round(this._y - ((intersectionLength) * Math.sign(this.speed.y)));
 
 				// Floor collision
@@ -97,12 +99,17 @@ export default class Player extends GameObject {
 		// Wall collision
 		for (let i = 0; i < this.collisionTiles.length; i++) {
 			if (this.testCollision(this, this.collisionTiles[i])) {
+				// Fix horizontal position
 				let intersectionLength = this.getCollisionDepth(this.x, this.width, this.collisionTiles[i].x, this.collisionTiles[i].width);
 				this.x = this._x - (intersectionLength * Math.sign(this.speed.x));
+
 				this.speed.x = 0;
+
 				break;
 			}
 		}
+
+		this.sequenceName = this.speed.x ? 'run' : 'idle';
 
 		this.sprite.update(delta);
 	}

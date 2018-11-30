@@ -11,26 +11,26 @@ export default class Level {
 		return new Promise((resolve) => {
 			// Is already loaded?
 			if (PIXI.loader.resources[this.tiledFile]) {
-				this.setData(false);
+				this.setLevelObjects(false);
 				resolve();
 			} else {
 				PIXI.loader.add(this.tiledFile).load(() => {
-					this.setData(true);
+					this.setLevelObjects(true);
 					resolve();
 				});
 			}
 		});
 	}
 
-	setData(fixPositions) {
+	setLevelObjects(fixPositions) {
 		this.tiledMap = new PIXI.extras.TiledMap(this.tiledFile);
-		var tilePoints = this.getTilePointsByLayer(this.tiledMap, 'Ground');
+		const tilePoints = this.getTilePointsByLayer(this.tiledMap, 'Ground');
 
 		this.collisionTiles = tilePoints.map(function (tp) {
 			return { x: tp.x * this.tiledMap.tileWidth, y: tp.y * this.tiledMap.tileHeight, width: this.tiledMap.tileWidth, height: this.tiledMap.tileHeight }
 		}.bind(this));
 
-		var objects = this.getObjects(this.tiledMap, 'Objects');
+		const objects = this.getObjects();
 		if (fixPositions) {
 			objects.forEach(o => {
 				this.fixPosition(o);
@@ -48,9 +48,9 @@ export default class Level {
 		});
 	}
 
-	getObjects(tiledMap, name) {
-		var layer = tiledMap.layers.find(function (layer) {
-			return layer.name === name;
+	getObjects() {
+		const layer = this.tiledMap.layers.find(function (layer) {
+			return layer.name === 'Objects';
 		})
 		return layer.objects;
 	}
@@ -61,9 +61,9 @@ export default class Level {
 	}
 
 	getTilePointsByLayer(tiledMap, name) {
-		var points = [];
+		const points = [];
 
-		var layer = tiledMap.layers.find(function (layer) {
+		const layer = tiledMap.layers.find(function (layer) {
 			return layer.name === name;
 		})
 
@@ -80,7 +80,7 @@ export default class Level {
 
 		this.collectibles = [];
 		this.collectibleObjects.forEach(co => {
-			var collectible = new Collectible(spriteManager.createExtendedAnimatedSprite('big_present'))
+			const collectible = new Collectible(spriteManager.createExtendedAnimatedSprite('big_present'))
 			collectible.x = co.x;
 			collectible.y = co.y;
 
@@ -89,7 +89,7 @@ export default class Level {
 
 		this.enemies = [];
 		this.enemyObjects.forEach(co => {
-			var enemy = new Enemy(spriteManager.createExtendedAnimatedSprite('enemy'));
+			const enemy = new Enemy(spriteManager.createExtendedAnimatedSprite('enemy'));
 			enemy.startX = co.x;
 			enemy.y = co.y;
 			enemy.radius = +co.properties.radius;

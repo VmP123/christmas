@@ -44,16 +44,16 @@ export default class Game {
 	onKeyDown(key) {
 		if (key.keyCode === 37)
 			this.player.move(-1);
-		if (key.keyCode === 39)
+		else if (key.keyCode === 39)
 			this.player.move(1);
-		if (key.keyCode === 38)
+		else if (key.keyCode === 38)
 			this.player.tryJump();
 	}
 
 	onKeyUp(key) {
 		if (key.keyCode === 37 && this.player.direction === -1)
 			this.player.move(0);
-		if (key.keyCode === 39 && this.player.direction === 1)
+		else if (key.keyCode === 39 && this.player.direction === 1)
 			this.player.move(0);
 	}
 
@@ -63,7 +63,7 @@ export default class Game {
 	}
 
 	init() {
-		var loader = new PIXI.loaders.Loader();
+		const loader = new PIXI.loaders.Loader();
 		loader.add('config', 'config.json');
 		loader.add('levels', 'levels.json');
 		this.spriteManager = new SpriteManager('sprites.json');
@@ -89,9 +89,15 @@ export default class Game {
 				this.gameLoop(delta);
 			});
 
-			this.levelId = 0;
-			this.loadLevel(this.levelId).then(() => this.startLevel())
+			this.startGame();
 		});
+	}
+
+	loadLevel(id) {
+		this.state = STATE.LOADING;
+		const levelFile = this.levels[id];
+		this.level = new Level(levelFile);
+		return this.level.load();
 	}
 
 	completeLevel() {
@@ -101,11 +107,9 @@ export default class Game {
 		this.loadLevel(this.levelId).then(() => this.startLevel());
 	}
 
-	loadLevel(id) {
-		this.state = STATE.LOADING;
-		const levelFile = this.levels[id];
-		this.level = new Level(levelFile);
-		return this.level.load();
+	startGame() {
+		this.levelId = 0;
+		this.loadLevel(this.levelId).then(() => this.startLevel())
 	}
 
 	startLevel() {

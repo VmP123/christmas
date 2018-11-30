@@ -70,7 +70,7 @@ export default class ExtendedAnimatedSprite extends PIXI.extras.AnimatedSprite {
 		if (!this.sequence)
 			return super.currentFrame;
 
-		var currentSequenceFrame = Math.floor(this._currentTime) % this.sequence.length;
+		const currentSequenceFrame = Math.floor(this._currentTime) % this.sequence.length;
 		let currentFrame = this.sequence[currentSequenceFrame];
         if (currentFrame < 0)
         {

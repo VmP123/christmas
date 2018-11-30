@@ -8,7 +8,7 @@ export default class SpriteManager {
 
 	load() {
 		return new Promise((resolve) => {
-			var loader = new PIXI.loaders.Loader();
+			const loader = new PIXI.loaders.Loader();
 			loader.add('spritePack', this.spritePackFile).load(() => {
 				this.spritePack = loader.resources.spritePack.data;
 
@@ -17,13 +17,13 @@ export default class SpriteManager {
 
 				this.frameRowsByImage = {};
 				Object.keys(this.spritePack.sprites).forEach(key => {
-					var sprite = this.spritePack.sprites[key];
-					var baseTexture = PIXI.BaseTexture.fromImage(sprite.image);
-					var maxFrameId = this.getMaxFrameIdFromSequences(sprite.sequences);
+					const sprite = this.spritePack.sprites[key];
+					const baseTexture = PIXI.BaseTexture.fromImage(sprite.image);
+					const maxFrameId = this.getMaxFrameIdFromSequences(sprite.sequences);
 
-					var frames = [];
-					for(var i = 0; i <= maxFrameId; i++) {
-						var texture = new PIXI.Texture(baseTexture, new PIXI.Rectangle(
+					let frames = [];
+					for(let i = 0; i <= maxFrameId; i++) {
+						const texture = new PIXI.Texture(baseTexture, new PIXI.Rectangle(
 							i * this.width,
 							sprite.row * this.height,
 							this.width,
@@ -33,15 +33,15 @@ export default class SpriteManager {
 					}
 
 					if (sprite.generateHorizontalMirrored) {
-						var horizontalMirroredFrames = frames.map(frame => {
-							var clonedFrame = frame.clone();
+						const horizontalMirroredFrames = frames.map(frame => {
+							const clonedFrame = frame.clone();
 							clonedFrame.rotate = 12;
 							return clonedFrame;
 						});
 
-						var horizontalMirroredSequences = {};
+						const horizontalMirroredSequences = {};
 						Object.keys(sprite.sequences).forEach(key => {
-							var sequence = sprite.sequences[key];
+							const sequence = sprite.sequences[key];
 							horizontalMirroredSequences[key + 'HorizontalMirrored'] =
 								sequence.map(sequenceStep => sequenceStep + frames.length);
 						});
@@ -62,9 +62,9 @@ export default class SpriteManager {
 	}
 
 	getMaxFrameIdFromSequences(sequences) {
-		var maxId = 0;
+		let maxId = 0;
 		Object.keys(sequences).forEach(key => {
-			var localMaxId = Math.max(...sequences[key]);
+			const localMaxId = Math.max(...sequences[key]);
 			if (localMaxId > maxId)
 				maxId = localMaxId;
 		})
@@ -72,10 +72,10 @@ export default class SpriteManager {
 	}
 
 	createExtendedAnimatedSprite(spriteName) {
-		var sprite = this.spritePack.sprites[spriteName];
-		var frames = this.frameRowsByImage[sprite.image][sprite.row];
+		const sprite = this.spritePack.sprites[spriteName];
+		const frames = this.frameRowsByImage[sprite.image][sprite.row];
 
-		var extendedAnimatedSprite = new ExtendedAnimatedSprite(frames, false);
+		const extendedAnimatedSprite = new ExtendedAnimatedSprite(frames, false);
 		extendedAnimatedSprite.sequences = sprite.sequences;
 		extendedAnimatedSprite.boundingBox = sprite.boundingBox;
 
