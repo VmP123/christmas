@@ -48,6 +48,8 @@ export default class Game {
 			this.player.move(1);
 		else if (key.keyCode === 38)
 			this.player.tryJump();
+		else if (key.keyCode === 78)
+			this.completeLevel();
 	}
 
 	onKeyUp(key) {
