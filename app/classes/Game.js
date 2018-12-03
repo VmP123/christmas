@@ -121,10 +121,12 @@ export default class Game {
 		this.level.collectibles.forEach(collectibe => this.app.stage.addChild(collectibe.sprite) );
 		this.level.enemies.forEach(enemy => this.app.stage.addChild(enemy.sprite));
 
-		this.player = new Player(this.spriteManager.createExtendedAnimatedSprite('player'));
-		this.player.collisionTiles = this.level.collisionTiles;
-		this.player.respawn(this.level.startObject.x, this.level.startObject.y);
-		this.app.stage.addChild(this.player.sprite);
+		if (this.level.startObject) {
+			this.player = new Player(this.spriteManager.createExtendedAnimatedSprite('player'));
+			this.player.collisionTiles = this.level.collisionTiles;
+			this.player.respawn(this.level.startObject.x, this.level.startObject.y);
+			this.app.stage.addChild(this.player.sprite);
+		}
 
 		this.state = STATE.GAMEON;
 	}
