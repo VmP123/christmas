@@ -90,7 +90,7 @@ export default class Level {
 		this.enemies = [];
 		this.enemyObjects.forEach(co => {
 			const enemy = new Enemy(spriteManager.createExtendedAnimatedSprite('enemy'));
-			enemy.startX = co.x;
+			enemy.x = co.x;
 			enemy.y = co.y;
 			enemy.radius = +co.properties.radius;
 

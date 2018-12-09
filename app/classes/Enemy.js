@@ -24,20 +24,13 @@ export default class Enemy extends GameObject {
 		super.update(delta);
 	}
 
-	set startX(startX) {
-		this._startX = startX;
-		this._x = startX;
+	set radius(radius) {
+		this._radius = radius;
+		this.minX = this.x - radius;
+		this.maxX = this.x + radius;
 	}
 
-	get startX() {
-		return this._startX;
-	}
-
-	get minX() {
-		return this.startX - this.radius;
-	}
-
-	get maxX() {
-		return this.startX + this.radius;
+	get radius() {
+		return this._radius;
 	}
 }
