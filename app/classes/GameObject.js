@@ -4,11 +4,18 @@ export default class GameObject {
 	constructor(sprite) {
 		this.sprite = sprite;
 		this.sprite.animationSpeed = 0.1;
+		this.boundingBox = {
+			x: this.sprite.boundingBox ? this.x + this.sprite.boundingBox.x : this.x,
+			y: this.sprite.boundingBox ? this.y + this.sprite.boundingBox.y : this.y,
+			width: this.sprite.boundingBox ? this.sprite.boundingBox.width : this.width,
+			height: this.sprite.boundingBox ? this.sprite.boundingBox.height : this.height
+		};
 	}
 
 	set x(x) {
 		this._x = x;
 		this.sprite.x = Math.floor(x);
+		this.boundingBox.x = this.sprite.boundingBox ? this.x + this.sprite.boundingBox.x : this.x;
 	}
 
 	get x() {
@@ -18,6 +25,7 @@ export default class GameObject {
 	set y(y) {
 		this._y = y;
 		this.sprite.y = Math.floor(y);
+		this.boundingBox.y = this.sprite.boundingBox ? this.y + this.sprite.boundingBox.y : this.y;
 	}
 
 	get y() {
@@ -71,7 +79,6 @@ export default class GameObject {
 	}
 
 	testCollision (target) {
-		// TODO: BoundingBox
-		return Utils.testCollision(this, target);
+		return Utils.testCollision(this.boundingBox, target.boundingBox);
 	}
 }

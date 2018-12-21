@@ -1,4 +1,5 @@
 import GameObject from './GameObject.js'
+import Utils from './Utils.js'
 
 export default class Player extends GameObject {
 	constructor(sprite) {
@@ -7,24 +8,6 @@ export default class Player extends GameObject {
 		this.sprite.animationSpeed = 0.1;
 		this.acceleration = {x: 0.2, y: 0.16};
 		this.maxSpeed = {x: 0.7, y: 0};
-	}
-
-	set x(x) {
-		this._x = x;
-		this.sprite.x = Math.floor(x);
-	}
-
-	get x() {
-		return this.sprite.x;
-	}
-
-	set y(y) {
-		this._y = y;
-		this.sprite.y = Math.floor(y);
-	}
-
-	get y() {
-		return this.sprite.y;
 	}
 
     move(direction) {
@@ -78,7 +61,7 @@ export default class Player extends GameObject {
 
 		// Floor and ceiling collision
 		for (let i = 0; i < this.collisionTiles.length; i++) {
-			if (this.testCollision({x: this.x, y: this.y, height: this.height + 1, width: this.width }, this.collisionTiles[i])) {
+			if (Utils.testCollision({x: this.boundingBox.x, y: this.boundingBox.y, height: this.boundingBox.height + 1, width: this.boundingBox.width }, this.collisionTiles[i])) {
 				// Fix vertical position
 				const intersectionLength = this.getCollisionDepth(this._y, this.height, this.collisionTiles[i].y, this.collisionTiles[i].height);
 				this.y = Math.round(this._y - ((intersectionLength) * Math.sign(this.speed.y)));
@@ -98,9 +81,9 @@ export default class Player extends GameObject {
 
 		// Wall collision
 		for (let i = 0; i < this.collisionTiles.length; i++) {
-			if (this.testCollision(this, this.collisionTiles[i])) {
+			if (Utils.testCollision(this.boundingBox, this.collisionTiles[i])) {
 				// Fix horizontal position
-				let intersectionLength = this.getCollisionDepth(this.x, this.width, this.collisionTiles[i].x, this.collisionTiles[i].width);
+				let intersectionLength = this.getCollisionDepth(this.boundingBox.x, this.boundingBox.width, this.collisionTiles[i].x, this.collisionTiles[i].width);
 				this.x = this._x - (intersectionLength * Math.sign(this.speed.x));
 
 				this.speed.x = 0;
@@ -112,13 +95,6 @@ export default class Player extends GameObject {
 		this.sequenceName = this.speed.x ? 'run' : 'idle';
 
 		this.sprite.update(delta);
-	}
-
-	testCollision(a, b) {
-		return (a.x < b.x + b.width &&
-			a.x + a.width > b.x &&
-			a.y < b.y + b.height &&
-			a.y + a.height > b.y);
 	}
 
 	getCollisionDepth(aStart, aLength, bStart, bLength) {
