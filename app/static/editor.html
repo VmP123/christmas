@@ -61,8 +61,8 @@
 
     /* Palette */
     .palette-area {
-      background: #16213e; width: 200px; flex-shrink: 0; padding: 8px;
-      overflow-y: auto; border-left: 1px solid #0f3460;
+      background: #16213e; width: 336px; flex-shrink: 0; padding: 8px;
+      overflow-x: hidden; overflow-y: auto; border-left: 1px solid #0f3460;
     }
     .palette-area h3 { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
     #paletteCanvas { image-rendering: pixelated; cursor: pointer; border: 1px solid #2a2a4e; display: block; }
@@ -165,8 +165,8 @@ const TILE_W = 8, TILE_H = 8;
 const MAP_W = 16, MAP_H = 16;
 const TILESET_COLS = 8, TILESET_ROWS = 4;
 const TILE_COUNT = TILESET_COLS * TILESET_ROWS; // 32
-const EDITOR_SCALE = 32;  // px per tile in map view
-const PAL_SCALE = 22;     // px per tile in palette
+const EDITOR_SCALE = 40;  // px per tile in map view (5x, matches game scale)
+const PAL_SCALE = 40;     // px per tile in palette (5x, matches game scale)
 
 const LAYERS = ['Sky', 'Background', 'Ground'];
 const SKY_TILE = 27;      // default tile for Sky layer
