@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+  <meta charset="utf-8"/>
+  <title>Christmas – Kenttäeditori</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #1a1a2e; color: #eee; font-family: monospace; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+
+    header {
+      background: #16213e; padding: 6px 12px; display: flex; align-items: center;
+      gap: 8px; border-bottom: 2px solid #e94560; flex-shrink: 0; flex-wrap: wrap;
+    }
+    header h1 { font-size: 14px; color: #e94560; margin-right: 8px; }
+    button {
+      background: #0f3460; color: #eee; border: 1px solid #e94560;
+      padding: 4px 10px; cursor: pointer; font-family: monospace; font-size: 12px;
+    }
+    button:hover { background: #e94560; }
+    button.active { background: #e94560; }
+    select, input[type=text] {
+      background: #0f3460; color: #eee; border: 1px solid #555;
+      padding: 4px 8px; font-family: monospace; font-size: 12px;
+    }
+    input[type=number] {
+      background: #0f3460; color: #eee; border: 1px solid #555;
+      padding: 3px 6px; width: 52px; font-family: monospace; font-size: 12px;
+    }
+    label { font-size: 12px; color: #aaa; }
+
+    .workspace { display: flex; flex: 1; overflow: hidden; }
+
+    /* Left sidebar */
+    .sidebar {
+      background: #16213e; width: 190px; flex-shrink: 0;
+      display: flex; flex-direction: column; padding: 8px; gap: 6px;
+      overflow-y: auto; border-right: 1px solid #0f3460;
+    }
+    .section { border-bottom: 1px solid #2a2a4e; padding-bottom: 8px; }
+    .section h3 { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
+    .btn-group { display: flex; flex-wrap: wrap; gap: 3px; }
+    .layer-row { display: flex; align-items: center; gap: 3px; margin-bottom: 2px; }
+    .layer-btn { flex: 1; text-align: left; font-size: 11px; padding: 3px 8px; }
+    .eye-btn { background: #0f3460; color: #eee; border: 1px solid #444; padding: 3px 6px; cursor: pointer; font-size: 12px; flex-shrink: 0; line-height: 1; }
+    .eye-btn:hover { border-color: #e94560; }
+    .eye-btn.hidden { opacity: 0.35; }
+    .obj-section { display: none; }
+    .obj-section.visible { display: block; }
+    #objectList { font-size: 10px; color: #aaa; display: flex; flex-direction: column; gap: 1px; max-height: 140px; overflow-y: auto; }
+    #objectList .obj-item {
+      padding: 2px 4px; cursor: pointer; border: 1px solid transparent;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    #objectList .obj-item:hover { background: #0f3460; border-color: #e94560; }
+    #objectList .obj-item .del { color: #e94560; font-size: 10px; }
+    .coord-info { font-size: 10px; color: #666; margin-top: auto; }
+
+    /* Map */
+    .map-area { flex: 1; overflow: auto; padding: 12px; }
+    #mapCanvas { cursor: crosshair; image-rendering: pixelated; border: 2px solid #0f3460; display: block; }
+
+    /* Palette */
+    .palette-area {
+      background: #16213e; width: 200px; flex-shrink: 0; padding: 8px;
+      overflow-y: auto; border-left: 1px solid #0f3460;
+    }
+    .palette-area h3 { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+    #paletteCanvas { image-rendering: pixelated; cursor: pointer; border: 1px solid #2a2a4e; display: block; }
+    #tileEmptyBtn { width: 100%; margin-top: 4px; font-size: 11px; }
+    .selected-info { margin-top: 6px; font-size: 10px; color: #888; }
+
+    #statusBar {
+      background: #16213e; padding: 3px 12px; font-size: 10px; color: #666;
+      border-top: 1px solid #0f3460; flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+<header>
+  <h1>Kenttäeditori</h1>
+  <select id="levelSelect"><option value="">-- Uusi kenttä --</option></select>
+  <button id="loadServerBtn">Lataa</button>
+  <button id="openFileBtn">Avaa TMX…</button>
+  <button id="newBtn">Uusi</button>
+  <button id="exportBtn">Vie TMX</button>
+  <label>Nimi: <input type="text" id="levelName" value="new_level" style="width:90px"/></label>
+  <a href="index.html" style="color:#888;font-size:12px;margin-left:8px;text-decoration:none;">← Peli</a>
+</header>
+
+<div class="workspace">
+  <!-- Left sidebar -->
+  <div class="sidebar">
+    <div class="section">
+      <h3>Työkalu</h3>
+      <div class="btn-group">
+        <button class="active" data-tool="paint">Maalaa</button>
+        <button data-tool="erase">Pyyhi</button>
+        <button data-tool="fill">Täytä</button>
+        <button data-tool="object">Objekti</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>Taso</h3>
+      <div class="layer-row">
+        <button class="layer-btn active" data-layer="Sky">Taivas (Sky)</button>
+        <button class="eye-btn" data-eye="Sky" title="Näytä/piilota">👁</button>
+      </div>
+      <div class="layer-row">
+        <button class="layer-btn" data-layer="Background">Tausta (BG)</button>
+        <button class="eye-btn" data-eye="Background" title="Näytä/piilota">👁</button>
+      </div>
+      <div class="layer-row">
+        <button class="layer-btn" data-layer="Ground">Maasto (Ground)</button>
+        <button class="eye-btn" data-eye="Ground" title="Näytä/piilota">👁</button>
+      </div>
+      <div class="layer-row">
+        <button class="layer-btn" data-layer="Objects" style="color:#ffd080">Objektit</button>
+        <button class="eye-btn" data-eye="Objects" title="Näytä/piilota">👁</button>
+      </div>
+    </div>
+
+    <div class="section obj-section" id="objSection">
+      <h3>Objektityyppi</h3>
+      <div class="btn-group" style="flex-direction:column;gap:2px">
+        <button class="active" data-obj="start" style="width:100%;text-align:left;font-size:11px">🟢 Aloitus (Start)</button>
+        <button data-obj="enemy" style="width:100%;text-align:left;font-size:11px">🔴 Vihollinen</button>
+        <button data-obj="collectible" style="width:100%;text-align:left;font-size:11px">🟡 Kerättävä</button>
+        <button data-obj="delete" style="width:100%;text-align:left;font-size:11px">✖ Poista</button>
+      </div>
+      <div style="margin-top:6px">
+        <label>Vihollisen säde:<br/><input type="number" id="enemyRadius" value="20" min="4" max="200"/> px</label>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>Objektit</h3>
+      <div id="objectList"><span style="color:#666">Ei objekteja</span></div>
+    </div>
+
+    <div class="coord-info" id="coordInfo">Tile: –</div>
+  </div>
+
+  <!-- Map canvas -->
+  <div class="map-area">
+    <canvas id="mapCanvas"></canvas>
+  </div>
+
+  <!-- Tileset palette -->
+  <div class="palette-area">
+    <h3>Tileset</h3>
+    <canvas id="paletteCanvas"></canvas>
+    <button id="tileEmptyBtn">Tyhjä tile (0)</button>
+    <div class="selected-info" id="selectedInfo">Valittu: tile 27</div>
+  </div>
+</div>
+
+<div id="statusBar">Valmis</div>
+
+<input type="file" id="fileInput" accept=".tmx" style="display:none"/>
+
+<script>
+// ─── Constants ───────────────────────────────────────────────────────────────
+const TILE_W = 8, TILE_H = 8;
+const MAP_W = 16, MAP_H = 16;
+const TILESET_COLS = 8, TILESET_ROWS = 4;
+const TILE_COUNT = TILESET_COLS * TILESET_ROWS; // 32
+const EDITOR_SCALE = 32;  // px per tile in map view
+const PAL_SCALE = 22;     // px per tile in palette
+
+const LAYERS = ['Sky', 'Background', 'Ground'];
+const SKY_TILE = 27;      // default tile for Sky layer
+
+// ─── State ───────────────────────────────────────────────────────────────────
+let tilesetImg = null;
+let mapData = {};          // { layerName: Int32Array(256) }
+let objects = [];          // { id, type, x, y, radius? }  – TMX pixel coords
+let nextObjId = 1;
+let currentLayer = 'Sky';
+let currentTool = 'paint';
+let currentObjType = 'start';
+let selectedTile = SKY_TILE;  // 1-based (0 = empty)
+let isPainting = false;
+let paintValue = null;
+let draggingObj = null;
+let selectedObj = null;
+let layerVisible = { Sky: true, Background: true, Ground: true, Objects: true };
+
+// ─── DOM refs ─────────────────────────────────────────────────────────────────
+const mapCanvas    = document.getElementById('mapCanvas');
+const mapCtx       = mapCanvas.getContext('2d');
+const palCanvas    = document.getElementById('paletteCanvas');
+const palCtx       = palCanvas.getContext('2d');
+const statusEl     = document.getElementById('statusBar');
+const coordEl      = document.getElementById('coordInfo');
+const selectedInfo = document.getElementById('selectedInfo');
+const objectListEl = document.getElementById('objectList');
+const objSection   = document.getElementById('objSection');
+const fileInput    = document.getElementById('fileInput');
+
+mapCanvas.width  = MAP_W * EDITOR_SCALE;
+mapCanvas.height = MAP_H * EDITOR_SCALE;
+palCanvas.width  = TILESET_COLS * PAL_SCALE;
+palCanvas.height = TILESET_ROWS * PAL_SCALE;
+
+// ─── Map initialisation ──────────────────────────────────────────────────────
+function newMap() {
+  LAYERS.forEach(l => {
+    mapData[l] = new Array(MAP_W * MAP_H).fill(0);
+  });
+  mapData['Sky'].fill(SKY_TILE);
+  objects = [];
+  nextObjId = 1;
+  document.getElementById('levelName').value = 'new_level';
+  renderMap();
+  renderObjectList();
+  setStatus('Uusi kenttä luotu');
+}
+
+// ─── Tileset loading ──────────────────────────────────────────────────────────
+function loadTileset() {
+  return new Promise(resolve => {
+    tilesetImg = new Image();
+    tilesetImg.onload = () => { renderPalette(); resolve(); };
+    tilesetImg.onerror = () => { setStatus('Varoitus: tileset kuvaa ei löydy (Joulu_tileset.png)'); resolve(); };
+    tilesetImg.src = 'Joulu_tileset.png';
+  });
+}
+
+// ─── Palette rendering ────────────────────────────────────────────────────────
+function renderPalette() {
+  palCtx.imageSmoothingEnabled = false;
+  palCtx.fillStyle = '#1a1a2e';
+  palCtx.fillRect(0, 0, palCanvas.width, palCanvas.height);
+
+  if (tilesetImg) {
+    for (let i = 0; i < TILE_COUNT; i++) {
+      const srcX = (i % TILESET_COLS) * TILE_W;
+      const srcY = Math.floor(i / TILESET_COLS) * TILE_H;
+      const dstX = (i % TILESET_COLS) * PAL_SCALE;
+      const dstY = Math.floor(i / TILESET_COLS) * PAL_SCALE;
+      palCtx.drawImage(tilesetImg, srcX, srcY, TILE_W, TILE_H, dstX, dstY, PAL_SCALE, PAL_SCALE);
+    }
+  }
+
+  // Grid
+  palCtx.strokeStyle = 'rgba(255,255,255,0.12)';
+  palCtx.lineWidth = 0.5;
+  for (let c = 0; c <= TILESET_COLS; c++) {
+    palCtx.beginPath();
+    palCtx.moveTo(c * PAL_SCALE, 0);
+    palCtx.lineTo(c * PAL_SCALE, palCanvas.height);
+    palCtx.stroke();
+  }
+  for (let r = 0; r <= TILESET_ROWS; r++) {
+    palCtx.beginPath();
+    palCtx.moveTo(0, r * PAL_SCALE);
+    palCtx.lineTo(palCanvas.width, r * PAL_SCALE);
+    palCtx.stroke();
+  }
+
+  // Highlight selected tile
+  if (selectedTile > 0) {
+    const idx = selectedTile - 1;
+    const sx = (idx % TILESET_COLS) * PAL_SCALE;
+    const sy = Math.floor(idx / TILESET_COLS) * PAL_SCALE;
+    palCtx.strokeStyle = '#e94560';
+    palCtx.lineWidth = 2;
+    palCtx.strokeRect(sx + 1, sy + 1, PAL_SCALE - 2, PAL_SCALE - 2);
+  }
+}
+
+// ─── Map rendering ────────────────────────────────────────────────────────────
+function renderMap() {
+  mapCtx.imageSmoothingEnabled = false;
+
+  // Checkerboard background
+  for (let r = 0; r < MAP_H; r++) {
+    for (let c = 0; c < MAP_W; c++) {
+      mapCtx.fillStyle = (r + c) % 2 === 0 ? '#1a1a2e' : '#20203a';
+      mapCtx.fillRect(c * EDITOR_SCALE, r * EDITOR_SCALE, EDITOR_SCALE, EDITOR_SCALE);
+    }
+  }
+
+  if (!tilesetImg) {
+    // Draw placeholder grid text
+    mapCtx.fillStyle = '#333';
+    mapCtx.font = '10px monospace';
+    mapCtx.fillText('Tileset ei ladattu', 8, 20);
+  }
+
+  // Tile layers
+  LAYERS.forEach(layerName => {
+    const tiles = mapData[layerName];
+    if (!tiles || !tilesetImg || !layerVisible[layerName]) return;
+    for (let r = 0; r < MAP_H; r++) {
+      for (let c = 0; c < MAP_W; c++) {
+        const tileId = tiles[r * MAP_W + c];
+        if (tileId === 0) continue;
+        const idx = tileId - 1;
+        if (idx < 0 || idx >= TILE_COUNT) continue;
+        const srcX = (idx % TILESET_COLS) * TILE_W;
+        const srcY = Math.floor(idx / TILESET_COLS) * TILE_H;
+        mapCtx.drawImage(tilesetImg, srcX, srcY, TILE_W, TILE_H,
+          c * EDITOR_SCALE, r * EDITOR_SCALE, EDITOR_SCALE, EDITOR_SCALE);
+      }
+    }
+  });
+
+  // Objects (rendered at game coords = TMX coords after fixPosition)
+  if (!layerVisible['Objects']) return;
+  objects.forEach(obj => {
+    // fixPosition: gameX = tmxX - tileW/2, gameY = tmxY - tileH
+    const gx = obj.x - TILE_W * 0.5;
+    const gy = obj.y - TILE_H;
+    const cx = gx / TILE_W * EDITOR_SCALE + EDITOR_SCALE * 0.5;
+    const cy = gy / TILE_H * EDITOR_SCALE + EDITOR_SCALE * 0.5;
+    const r  = EDITOR_SCALE * 0.38;
+
+    // Enemy patrol radius ring
+    if (obj.type === 'enemy' && obj.radius) {
+      const er = obj.radius / TILE_W * EDITOR_SCALE;
+      mapCtx.save();
+      mapCtx.strokeStyle = 'rgba(255,255,255,0.7)';
+      mapCtx.lineWidth = 1;
+      mapCtx.setLineDash([3, 3]);
+      mapCtx.beginPath();
+      mapCtx.arc(cx, cy, er, 0, Math.PI * 2);
+      mapCtx.stroke();
+      mapCtx.restore();
+    }
+
+    // Circle fill
+    mapCtx.beginPath();
+    mapCtx.arc(cx, cy, r, 0, Math.PI * 2);
+    if (obj.type === 'start')       mapCtx.fillStyle = 'rgba(0,200,80,0.85)';
+    else if (obj.type === 'enemy')  mapCtx.fillStyle = 'rgba(220,50,50,0.85)';
+    else                            mapCtx.fillStyle = 'rgba(255,200,0,0.85)';
+    mapCtx.fill();
+
+    // Label
+    mapCtx.fillStyle = '#fff';
+    mapCtx.font = `bold ${Math.floor(r * 1.1)}px monospace`;
+    mapCtx.textAlign = 'center';
+    mapCtx.textBaseline = 'middle';
+    const lbl = obj.type === 'start' ? 'S' : obj.type === 'enemy' ? 'E' : 'C';
+    mapCtx.fillText(lbl, cx, cy);
+
+    // Selection ring
+    if (obj === selectedObj) {
+      mapCtx.strokeStyle = '#fff';
+      mapCtx.lineWidth = 2;
+      mapCtx.setLineDash([4, 3]);
+      mapCtx.beginPath();
+      mapCtx.arc(cx, cy, r + 4, 0, Math.PI * 2);
+      mapCtx.stroke();
+      mapCtx.setLineDash([]);
+    }
+  });
+
+  // Grid overlay
+  mapCtx.strokeStyle = 'rgba(255,255,255,0.07)';
+  mapCtx.lineWidth = 0.5;
+  for (let c = 0; c <= MAP_W; c++) {
+    mapCtx.beginPath();
+    mapCtx.moveTo(c * EDITOR_SCALE, 0);
+    mapCtx.lineTo(c * EDITOR_SCALE, mapCanvas.height);
+    mapCtx.stroke();
+  }
+  for (let r = 0; r <= MAP_H; r++) {
+    mapCtx.beginPath();
+    mapCtx.moveTo(0, r * EDITOR_SCALE);
+    mapCtx.lineTo(mapCanvas.width, r * EDITOR_SCALE);
+    mapCtx.stroke();
+  }
+
+  // Active layer highlight border
+  mapCtx.strokeStyle = 'rgba(233,69,96,0.25)';
+  mapCtx.lineWidth = 3;
+  mapCtx.strokeRect(1, 1, mapCanvas.width - 2, mapCanvas.height - 2);
+}
+
+// ─── Object list ─────────────────────────────────────────────────────────────
+function renderObjectList() {
+  objectListEl.innerHTML = '';
+  if (objects.length === 0) {
+    objectListEl.innerHTML = '<span style="color:#555">Ei objekteja</span>';
+    return;
+  }
+  objects.forEach((obj, i) => {
+    const gx = Math.round((obj.x - TILE_W * 0.5) / TILE_W);
+    const gy = Math.round((obj.y - TILE_H) / TILE_H);
+    let label = `${obj.type} (${gx},${gy})`;
+    if (obj.type === 'enemy') label += ` r${obj.radius}`;
+
+    const div = document.createElement('div');
+    div.className = 'obj-item';
+
+    const span = document.createElement('span');
+    span.textContent = label;
+
+    const del = document.createElement('span');
+    del.className = 'del';
+    del.textContent = '✖';
+    del.title = 'Poista';
+    del.addEventListener('click', e => {
+      e.stopPropagation();
+      objects.splice(i, 1);
+      renderMap();
+      renderObjectList();
+    });
+
+    div.appendChild(span);
+    div.appendChild(del);
+    objectListEl.appendChild(div);
+  });
+}
+
+// ─── Half-tile snapping ───────────────────────────────────────────────────────
+// Returns TMX coords snapped to TILE_W/2 grid from canvas pixel position
+function canvasPxToTmx(px, py) {
+  const step = TILE_W / 2;  // 4 game pixels = half tile
+  // Subtract EDITOR_SCALE*0.5 to invert the offset added in objCanvasPos.
+  // Without this, every placement drifts one tile to the right/down.
+  const rawGX = (px - EDITOR_SCALE * 0.5) / EDITOR_SCALE * TILE_W;
+  const rawGY = (py - EDITOR_SCALE * 0.5) / EDITOR_SCALE * TILE_H;
+  const snappedGX = Math.round(rawGX / step) * step;
+  const snappedGY = Math.round(rawGY / step) * step;
+  // Clamp so objects stay within the map
+  const clampedGX = Math.max(0, Math.min((MAP_W - 1) * TILE_W + step, snappedGX));
+  const clampedGY = Math.max(0, Math.min((MAP_H - 1) * TILE_H + step, snappedGY));
+  return {
+    tmxX: clampedGX + TILE_W * 0.5,
+    tmxY: clampedGY + TILE_H
+  };
+}
+
+// ─── Object hit-testing helpers ──────────────────────────────────────────────
+function getCanvasPx(e) {
+  const rect = mapCanvas.getBoundingClientRect();
+  return {
+    px: (e.clientX - rect.left) * (mapCanvas.width  / rect.width),
+    py: (e.clientY - rect.top)  * (mapCanvas.height / rect.height)
+  };
+}
+
+function objCanvasPos(obj) {
+  const gx = obj.x - TILE_W * 0.5;
+  const gy = obj.y - TILE_H;
+  return {
+    cx: gx / TILE_W * EDITOR_SCALE + EDITOR_SCALE * 0.5,
+    cy: gy / TILE_H * EDITOR_SCALE + EDITOR_SCALE * 0.5
+  };
+}
+
+function findObjAtPx(px, py) {
+  const hitR = EDITOR_SCALE * 0.55;
+  for (let i = objects.length - 1; i >= 0; i--) {
+    const { cx, cy } = objCanvasPos(objects[i]);
+    if (Math.hypot(px - cx, py - cy) <= hitR) return objects[i];
+  }
+  return null;
+}
+
+// ─── Tile painting helpers ────────────────────────────────────────────────────
+function getMapTile(e) {
+  const rect = mapCanvas.getBoundingClientRect();
+  const scaleX = mapCanvas.width / rect.width;
+  const scaleY = mapCanvas.height / rect.height;
+  const x = (e.clientX - rect.left) * scaleX;
+  const y = (e.clientY - rect.top)  * scaleY;
+  return {
+    col: Math.floor(x / EDITOR_SCALE),
+    row: Math.floor(y / EDITOR_SCALE)
+  };
+}
+
+function floodFill(layer, startCol, startRow, newTile) {
+  const tiles = mapData[layer];
+  const oldTile = tiles[startRow * MAP_W + startCol];
+  if (oldTile === newTile) return;
+  const stack = [[startCol, startRow]];
+  while (stack.length) {
+    const [c, r] = stack.pop();
+    if (c < 0 || c >= MAP_W || r < 0 || r >= MAP_H) continue;
+    if (tiles[r * MAP_W + c] !== oldTile) continue;
+    tiles[r * MAP_W + c] = newTile;
+    stack.push([c+1,r],[c-1,r],[c,r+1],[c,r-1]);
+  }
+}
+
+function applyTool(col, row, px, py) {
+  if (col < 0 || col >= MAP_W || row < 0 || row >= MAP_H) return;
+
+  if (currentTool === 'object') {
+    const { tmxX, tmxY } = (px !== undefined)
+      ? canvasPxToTmx(px, py)
+      : { tmxX: col * TILE_W + TILE_W * 0.5, tmxY: row * TILE_H + TILE_H };
+
+    if (currentObjType === 'delete') {
+      const thresh = TILE_W * 1.5;
+      const idx = objects.findIndex(o => Math.abs(o.x - tmxX) < thresh && Math.abs(o.y - tmxY) < thresh);
+      if (idx >= 0) { objects.splice(idx, 1); renderMap(); renderObjectList(); }
+      return;
+    }
+    if (currentObjType === 'start') {
+      const idx = objects.findIndex(o => o.type === 'start');
+      if (idx >= 0) objects.splice(idx, 1);
+      objects.push({ id: nextObjId++, type: 'start', x: tmxX, y: tmxY });
+    } else if (currentObjType === 'enemy') {
+      const radius = parseInt(document.getElementById('enemyRadius').value) || 20;
+      objects.push({ id: nextObjId++, type: 'enemy', x: tmxX, y: tmxY, radius });
+    } else if (currentObjType === 'collectible') {
+      objects.push({ id: nextObjId++, type: 'collectible', x: tmxX, y: tmxY });
+    }
+    renderMap();
+    renderObjectList();
+    return;
+  }
+
+  if (currentTool === 'fill') {
+    const val = (paintValue !== null) ? paintValue : selectedTile;
+    floodFill(currentLayer, col, row, val);
+    renderMap();
+    return;
+  }
+
+  // paint / erase
+  const val = (paintValue !== null) ? paintValue : (currentTool === 'erase' ? 0 : selectedTile);
+  mapData[currentLayer][row * MAP_W + col] = val;
+  renderMap();
+}
+
+// ─── Map mouse events ─────────────────────────────────────────────────────────
+mapCanvas.addEventListener('mousedown', e => {
+  if (e.button === 2) {
+    // Right-click always erases tiles (not objects)
+    if (currentTool !== 'object') {
+      e.preventDefault();
+      isPainting = true;
+      paintValue = 0;
+      applyTool(getMapTile(e).col, getMapTile(e).row);
+    }
+    return;
+  }
+  if (e.button !== 0) return;
+
+  const { px, py } = getCanvasPx(e);
+  const { col, row } = getMapTile(e);
+
+  if (currentTool === 'object') {
+    const hit = findObjAtPx(px, py);
+    if (hit) {
+      // Start dragging the hit object and select it
+      draggingObj = hit;
+      selectedObj = hit;
+      if (hit.type === 'enemy') {
+        document.getElementById('enemyRadius').value = hit.radius;
+      }
+      renderMap();
+      renderObjectList();
+    } else {
+      // Click on empty space: deselect and place/delete
+      selectedObj = null;
+      applyTool(col, row, px, py);
+    }
+    return;
+  }
+
+  isPainting = true;
+  if (currentTool === 'paint') paintValue = selectedTile;
+  else if (currentTool === 'erase') paintValue = 0;
+  applyTool(col, row);
+});
+
+mapCanvas.addEventListener('mousemove', e => {
+  const { px, py } = getCanvasPx(e);
+  const { col, row } = getMapTile(e);
+
+  if (currentTool === 'object') {
+    const { tmxX, tmxY } = canvasPxToTmx(px, py);
+    const step = TILE_W / 2;
+    const dispX = (tmxX - TILE_W * 0.5) / step;
+    const dispY = (tmxY - TILE_H) / step;
+    coordEl.textContent = `½-tile: (${dispX}, ${dispY})`;
+
+    if (draggingObj) {
+      draggingObj.x = tmxX;
+      draggingObj.y = tmxY;
+      renderMap();
+      renderObjectList();
+      mapCanvas.style.cursor = 'grabbing';
+    } else {
+      mapCanvas.style.cursor = findObjAtPx(px, py) ? 'grab' : 'crosshair';
+    }
+    return;
+  }
+
+  coordEl.textContent = `Tile: (${col}, ${row})  px: (${col*TILE_W}, ${row*TILE_H})`;
+
+  mapCanvas.style.cursor = 'crosshair';
+  if (isPainting && currentTool !== 'fill') applyTool(col, row);
+});
+
+mapCanvas.addEventListener('mouseup', () => {
+  draggingObj = null;
+  isPainting = false;
+  paintValue = null;
+});
+mapCanvas.addEventListener('mouseleave', () => {
+  draggingObj = null;
+  isPainting = false;
+  paintValue = null;
+  coordEl.textContent = 'Tile: –';
+  mapCanvas.style.cursor = 'crosshair';
+});
+
+// Prevent context menu on right-click
+mapCanvas.addEventListener('contextmenu', e => e.preventDefault());
+
+// ─── Palette click ────────────────────────────────────────────────────────────
+palCanvas.addEventListener('click', e => {
+  const rect = palCanvas.getBoundingClientRect();
+  const col = Math.floor((e.clientX - rect.left) / PAL_SCALE);
+  const row = Math.floor((e.clientY - rect.top)  / PAL_SCALE);
+  if (col >= 0 && col < TILESET_COLS && row >= 0 && row < TILESET_ROWS) {
+    selectedTile = row * TILESET_COLS + col + 1;
+    selectedInfo.textContent = `Valittu: tile ${selectedTile} (${col},${row})`;
+    renderPalette();
+  }
+});
+document.getElementById('tileEmptyBtn').addEventListener('click', () => {
+  selectedTile = 0;
+  selectedInfo.textContent = 'Valittu: tyhjä (0)';
+  renderPalette();
+});
+
+// ─── Tool / layer / object buttons ───────────────────────────────────────────
+document.querySelectorAll('[data-tool]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    currentTool = btn.dataset.tool;
+    document.querySelectorAll('[data-tool]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    objSection.classList.toggle('visible', currentTool === 'object');
+  });
+});
+document.querySelectorAll('[data-layer]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    currentLayer = btn.dataset.layer;
+    document.querySelectorAll('[data-layer]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderMap();
+  });
+});
+document.querySelectorAll('[data-eye]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const layer = btn.dataset.eye;
+    layerVisible[layer] = !layerVisible[layer];
+    btn.classList.toggle('hidden', !layerVisible[layer]);
+    renderMap();
+  });
+});
+document.querySelectorAll('[data-obj]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    currentObjType = btn.dataset.obj;
+    document.querySelectorAll('[data-obj]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  });
+});
+
+// ─── TMX parsing ─────────────────────────────────────────────────────────────
+function parseTMX(xmlText) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(xmlText, 'text/xml');
+
+  const result = { layers: {}, objects: [], nextObjId: 1 };
+
+  doc.querySelectorAll('layer').forEach(layerEl => {
+    const name = layerEl.getAttribute('name');
+    const dataEl = layerEl.querySelector('data');
+    if (!dataEl) return;
+    const tiles = dataEl.textContent.trim().split(/[\s,]+/).filter(Boolean).map(v => parseInt(v, 10));
+    result.layers[name] = tiles;
+  });
+
+  doc.querySelectorAll('objectgroup[name="Objects"] object').forEach(obj => {
+    const id   = parseInt(obj.getAttribute('id')) || result.nextObjId;
+    const type = obj.getAttribute('type') || '';
+    const x    = parseFloat(obj.getAttribute('x')) || 0;
+    const y    = parseFloat(obj.getAttribute('y')) || 0;
+    const o    = { id, type, x, y };
+    const radiusProp = obj.querySelector('property[name="radius"]');
+    if (radiusProp) o.radius = parseInt(radiusProp.getAttribute('value'), 10);
+    result.objects.push(o);
+    if (id >= result.nextObjId) result.nextObjId = id + 1;
+  });
+
+  return result;
+}
+
+function applyParsed(parsed, name) {
+  LAYERS.forEach(l => {
+    mapData[l] = parsed.layers[l] ? Array.from(parsed.layers[l]) : new Array(MAP_W * MAP_H).fill(0);
+  });
+  objects   = parsed.objects;
+  nextObjId = parsed.nextObjId;
+  document.getElementById('levelName').value = name;
+  renderMap();
+  renderObjectList();
+}
+
+// ─── TMX export ──────────────────────────────────────────────────────────────
+function buildTMX() {
+  const maxId = objects.reduce((m, o) => Math.max(m, o.id), 0);
+  let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
+  xml += `<map version="1.0" tiledversion="1.1.5" orientation="orthogonal" renderorder="right-down"`;
+  xml += ` width="${MAP_W}" height="${MAP_H}" tilewidth="${TILE_W}" tileheight="${TILE_H}"`;
+  xml += ` infinite="0" nextobjectid="${maxId + 1}">\n`;
+  xml += ` <tileset firstgid="1" name="Joulu_tileset" tilewidth="${TILE_W}" tileheight="${TILE_H}" tilecount="32" columns="${TILESET_COLS}">\n`;
+  xml += `  <image source="Joulu_tileset.png" width="64" height="32"/>\n`;
+  xml += ` </tileset>\n`;
+
+  LAYERS.forEach(layerName => {
+    const tiles = mapData[layerName] || new Array(MAP_W * MAP_H).fill(0);
+    xml += ` <layer name="${layerName}" width="${MAP_W}" height="${MAP_H}">\n`;
+    xml += `  <data encoding="csv">\n`;
+    for (let r = 0; r < MAP_H; r++) {
+      xml += tiles.slice(r * MAP_W, r * MAP_W + MAP_W).join(',') + ',\n';
+    }
+    xml += `</data>\n`;
+    xml += ` </layer>\n`;
+  });
+
+  xml += ` <objectgroup name="Objects" visible="0">\n`;
+  objects.forEach(obj => {
+    xml += `  <object id="${obj.id}" type="${obj.type}" x="${obj.x}" y="${obj.y}">\n`;
+    if (obj.type === 'enemy' && obj.radius != null) {
+      xml += `   <properties>\n`;
+      xml += `    <property name="radius" value="${obj.radius}"/>\n`;
+      xml += `   </properties>\n`;
+    }
+    xml += `   <point/>\n`;
+    xml += `  </object>\n`;
+  });
+  xml += ` </objectgroup>\n`;
+  xml += `</map>\n`;
+  return xml;
+}
+
+// ─── Button handlers ─────────────────────────────────────────────────────────
+document.getElementById('newBtn').addEventListener('click', newMap);
+
+document.getElementById('exportBtn').addEventListener('click', () => {
+  const name = document.getElementById('levelName').value.trim() || 'new_level';
+  const blob = new Blob([buildTMX()], { type: 'text/xml' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name + '.tmx';
+  a.click();
+  setStatus(`Viety: ${name}.tmx`);
+});
+
+document.getElementById('loadServerBtn').addEventListener('click', async () => {
+  const val = document.getElementById('levelSelect').value;
+  if (!val) { setStatus('Valitse kenttä ensin'); return; }
+  setStatus(`Ladataan ${val}…`);
+  try {
+    const resp = await fetch(val);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const text = await resp.text();
+    applyParsed(parseTMX(text), val.replace('.tmx', ''));
+    setStatus(`Kenttä ${val} ladattu`);
+  } catch (e) {
+    setStatus(`Virhe: ${e.message}`);
+  }
+});
+
+document.getElementById('openFileBtn').addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    applyParsed(parseTMX(ev.target.result), file.name.replace('.tmx', ''));
+    setStatus(`Tiedosto ${file.name} ladattu`);
+  };
+  reader.readAsText(file);
+  fileInput.value = '';
+});
+
+// Keyboard shortcuts
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') return;
+  if (e.key === 'p' || e.key === 'b') setTool('paint');
+  if (e.key === 'e')                  setTool('erase');
+  if (e.key === 'f')                  setTool('fill');
+  if (e.key === 'o')                  setTool('object');
+  if (e.key === '1') setLayer('Sky');
+  if (e.key === '2') setLayer('Background');
+  if (e.key === '3') setLayer('Ground');
+  if (e.ctrlKey && e.key === 's') {
+    e.preventDefault();
+    document.getElementById('exportBtn').click();
+  }
+});
+
+function setTool(tool) {
+  currentTool = tool;
+  document.querySelectorAll('[data-tool]').forEach(b => b.classList.toggle('active', b.dataset.tool === tool));
+  objSection.classList.toggle('visible', tool === 'object');
+  if (tool !== 'object') { selectedObj = null; renderMap(); }
+}
+
+document.getElementById('enemyRadius').addEventListener('input', () => {
+  if (selectedObj && selectedObj.type === 'enemy') {
+    selectedObj.radius = parseInt(document.getElementById('enemyRadius').value) || 0;
+    renderMap();
+    renderObjectList();
+  }
+});
+function setLayer(layer) {
+  currentLayer = layer;
+  document.querySelectorAll('[data-layer]').forEach(b => b.classList.toggle('active', b.dataset.layer === layer));
+  renderMap();
+}
+
+function setStatus(msg) { statusEl.textContent = msg; }
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+async function init() {
+  newMap();
+  setStatus('Ladataan tileset…');
+  await loadTileset();
+  renderMap();
+
+  // Populate level dropdown from levels.json
+  try {
+    const resp = await fetch('levels.json');
+    if (resp.ok) {
+      const levels = await resp.json();
+      const sel = document.getElementById('levelSelect');
+      levels.forEach(lv => {
+        const opt = document.createElement('option');
+        opt.value = lv;
+        opt.textContent = lv;
+        sel.appendChild(opt);
+      });
+    }
+  } catch (_) {}
+
+  setStatus('Valmis — Oikohiiri: maalaa | Vasen: pyyhi | P=paint E=erase F=fill O=objekti 1/2/3=taso Ctrl+S=vie');
+}
+
+init();
+</script>
+</body>
+</html>
