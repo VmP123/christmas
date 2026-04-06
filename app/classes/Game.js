@@ -28,9 +28,10 @@ export default class Game {
 			if (collectible.testCollision(this.player)) {
 				this.app.stage.removeChild(collectible.sprite);
 				this.level.collectibles.splice(i, 1);
-				if (this.level.collectibles.length === 0)
+				if (this.level.collectibles.length === 0) {
 					this.completeLevel();
 					return;
+				}
 			}
 		}
 
@@ -71,7 +72,7 @@ export default class Game {
 		this.spriteManager = new SpriteManager('sprites.json');
 
 		Promise.all([
-			loader.load(),
+			new Promise(resolve => loader.load(resolve)),
 			this.spriteManager.load()
 		]).then(() => {
 			this.config = loader.resources.config.data;
@@ -103,7 +104,7 @@ export default class Game {
 	}
 
 	completeLevel() {
-		this.state = this.LEVELCOMPLETED;
+		this.state = STATE.LEVELCOMPLETED;
 		this.app.stage.removeChildren();
 		this.levelId = (this.levelId + 1) % this.levels.length;
 		this.loadLevel(this.levelId).then(() => this.startLevel());
