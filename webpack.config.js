@@ -4,10 +4,11 @@ var CopyWebpackPlugin = require('copy-webpack-plugin');
 
 module.exports = {
   entry: {
-    index: ['./app/entry.js']
+    index: ['./app/entry.js'],
+    test: ['./app/test-entry.js']
   },
   output: {
-    filename: 'bundle.js',
+    filename: '[name]-bundle.js',
     path: path.resolve(__dirname, 'build')
   },
   module: {
@@ -23,7 +24,7 @@ module.exports = {
         use: {
           loader: 'file-loader',
           options: {
-            name: 'index.html'
+            name: '[name].html'
           }
         }
       },

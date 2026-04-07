@@ -52,6 +52,7 @@
       display: flex; justify-content: space-between; align-items: center;
     }
     #objectList .obj-item:hover { background: #0f3460; border-color: #e94560; }
+    #objectList .obj-item.selected { background: #0f3460; border-color: #e94560; color: #fff; }
     #objectList .obj-item .del { color: #e94560; font-size: 10px; }
     .coord-info { font-size: 10px; color: #666; margin-top: auto; }
 
@@ -73,6 +74,23 @@
       background: #16213e; padding: 3px 12px; font-size: 10px; color: #666;
       border-top: 1px solid #0f3460; flex-shrink: 0;
     }
+
+    /* Object type indicators */
+    .obj-indicator {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      text-align: center;
+      line-height: 16px;
+      font-size: 10px;
+      font-weight: bold;
+      margin-right: 4px;
+      vertical-align: middle;
+    }
+    .obj-indicator.start { background: rgba(0,200,80,0.85); color: #fff; }
+    .obj-indicator.enemy { background: rgba(220,50,50,0.85); color: #fff; }
+    .obj-indicator.collectible { background: rgba(255,200,0,0.85); color: #000; }
   </style>
 </head>
 <body>
@@ -83,6 +101,7 @@
   <button id="openFileBtn">Avaa TMX…</button>
   <button id="newBtn">Uusi</button>
   <button id="exportBtn">Vie TMX</button>
+  <button id="testBtn" style="background:#0a8a0a;border-color:#0f0;">Testaa kenttä</button>
   <label>Nimi: <input type="text" id="levelName" value="new_level" style="width:90px"/></label>
   <a href="index.html" style="color:#888;font-size:12px;margin-left:8px;text-decoration:none;">← Peli</a>
 </header>
@@ -104,29 +123,28 @@
       <h3>Taso</h3>
       <div class="layer-row">
         <button class="layer-btn active" data-layer="Sky">Taivas (Sky)</button>
-        <button class="eye-btn" data-eye="Sky" title="Näytä/piilota">👁</button>
+        <button class="eye-btn" data-eye="Sky" title="Näytä/piilota">○</button>
       </div>
       <div class="layer-row">
         <button class="layer-btn" data-layer="Background">Tausta (BG)</button>
-        <button class="eye-btn" data-eye="Background" title="Näytä/piilota">👁</button>
+        <button class="eye-btn" data-eye="Background" title="Näytä/piilota">○</button>
       </div>
       <div class="layer-row">
         <button class="layer-btn" data-layer="Ground">Maasto (Ground)</button>
-        <button class="eye-btn" data-eye="Ground" title="Näytä/piilota">👁</button>
+        <button class="eye-btn" data-eye="Ground" title="Näytä/piilota">○</button>
       </div>
       <div class="layer-row">
         <button class="layer-btn" data-layer="Objects" style="color:#ffd080">Objektit</button>
-        <button class="eye-btn" data-eye="Objects" title="Näytä/piilota">👁</button>
+        <button class="eye-btn" data-eye="Objects" title="Näytä/piilota">○</button>
       </div>
     </div>
 
     <div class="section obj-section" id="objSection">
       <h3>Objektityyppi</h3>
       <div class="btn-group" style="flex-direction:column;gap:2px">
-        <button class="active" data-obj="start" style="width:100%;text-align:left;font-size:11px">🟢 Aloitus (Start)</button>
-        <button data-obj="enemy" style="width:100%;text-align:left;font-size:11px">🔴 Vihollinen</button>
-        <button data-obj="collectible" style="width:100%;text-align:left;font-size:11px">🟡 Kerättävä</button>
-        <button data-obj="delete" style="width:100%;text-align:left;font-size:11px">✖ Poista</button>
+        <button class="active" data-obj="start" style="width:100%;text-align:left;font-size:11px"><span class="obj-indicator start">S</span>Aloitus (Start)</button>
+        <button data-obj="enemy" style="width:100%;text-align:left;font-size:11px"><span class="obj-indicator enemy">E</span>Vihollinen</button>
+        <button data-obj="collectible" style="width:100%;text-align:left;font-size:11px"><span class="obj-indicator collectible">C</span>Kerättävä</button>
       </div>
       <div style="margin-top:6px">
         <label>Vihollisen säde:<br/><input type="number" id="enemyRadius" value="20" min="4" max="200"/> px</label>
@@ -395,17 +413,33 @@ function renderObjectList() {
 
     const div = document.createElement('div');
     div.className = 'obj-item';
+    if (obj === selectedObj) {
+      div.classList.add('selected');
+    }
 
     const span = document.createElement('span');
     span.textContent = label;
 
     const del = document.createElement('span');
     del.className = 'del';
-    del.textContent = '✖';
+    del.textContent = '×';
     del.title = 'Poista';
     del.addEventListener('click', e => {
       e.stopPropagation();
+      if (obj === selectedObj) selectedObj = null;
       objects.splice(i, 1);
+      renderMap();
+      renderObjectList();
+    });
+
+    // Klikkaus valitsee objektin
+    div.addEventListener('click', e => {
+      if (e.target === del) return; // Älä käsittele jos klikataan del-painiketta
+      selectedObj = obj;
+      if (obj.type === 'enemy') {
+        document.getElementById('enemyRadius').value = obj.radius;
+      }
+      setTool('object');
       renderMap();
       renderObjectList();
     });
@@ -496,13 +530,6 @@ function applyTool(col, row, px, py) {
     const { tmxX, tmxY } = (px !== undefined)
       ? canvasPxToTmx(px, py)
       : { tmxX: col * TILE_W + TILE_W * 0.5, tmxY: row * TILE_H + TILE_H };
-
-    if (currentObjType === 'delete') {
-      const thresh = TILE_W * 1.5;
-      const idx = objects.findIndex(o => Math.abs(o.x - tmxX) < thresh && Math.abs(o.y - tmxY) < thresh);
-      if (idx >= 0) { objects.splice(idx, 1); renderMap(); renderObjectList(); }
-      return;
-    }
     if (currentObjType === 'start') {
       const idx = objects.findIndex(o => o.type === 'start');
       if (idx >= 0) objects.splice(idx, 1);
@@ -665,6 +692,10 @@ document.querySelectorAll('[data-obj]').forEach(btn => {
     currentObjType = btn.dataset.obj;
     document.querySelectorAll('[data-obj]').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
+    // Varmista että object-työkalu on aktiivinen
+    if (currentTool !== 'object') {
+      setTool('object');
+    }
   });
 });
 
@@ -788,6 +819,21 @@ fileInput.addEventListener('change', e => {
   fileInput.value = '';
 });
 
+document.getElementById('testBtn').addEventListener('click', () => {
+  // Tallenna nykyinen kenttä localStorage:iin
+  const tmxData = buildTMX();
+  localStorage.setItem('editor_test_level', tmxData);
+  
+  // Avaa testisivu uuteen välilehteen
+  const testWindow = window.open('test.html', '_blank');
+  
+  if (testWindow) {
+    setStatus('Testikenttä avattu uuteen välilehteen');
+  } else {
+    setStatus('Virhe: Popup-esto esti testin avaamisen');
+  }
+});
+
 // Keyboard shortcuts
 document.addEventListener('keydown', e => {
   if (e.target.tagName === 'INPUT') return;
@@ -798,6 +844,17 @@ document.addEventListener('keydown', e => {
   if (e.key === '1') setLayer('Sky');
   if (e.key === '2') setLayer('Background');
   if (e.key === '3') setLayer('Ground');
+  if (e.key === 'Delete' && selectedObj) {
+    e.preventDefault();
+    const idx = objects.indexOf(selectedObj);
+    if (idx >= 0) {
+      objects.splice(idx, 1);
+      selectedObj = null;
+      renderMap();
+      renderObjectList();
+      setStatus('Objekti poistettu');
+    }
+  }
   if (e.ctrlKey && e.key === 's') {
     e.preventDefault();
     document.getElementById('exportBtn').click();

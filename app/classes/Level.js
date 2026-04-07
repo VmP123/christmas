@@ -1,33 +1,92 @@
 import * as PIXI from 'pixi.js';
 import Enemy from './Enemy.js'
 import Collectible from './Collectible.js'
+import TmxParser from './TmxParser.js'
+import TileMap from './TileMap.js'
 
 export default class Level {
 	constructor(tiledFile) {
 		this.tiledFile = tiledFile;
+		this.resourcePath = tiledFile.substring(0, tiledFile.lastIndexOf('/') + 1);
+		if (this.resourcePath === '') {
+			this.resourcePath = './';
+		}
 	}
 
 	load() {
 		return new Promise((resolve) => {
-			// Is already loaded?
-			if (PIXI.loader.resources[this.tiledFile]) {
-				this.setLevelObjects(false);
-				resolve();
-			} else {
-				PIXI.loader.add(this.tiledFile).load(() => {
-					this.setLevelObjects(true);
-					resolve();
+			// Check if TMX is already loaded
+			const needsToLoadTmx = !PIXI.loader.resources[this.tiledFile];
+			
+			if (needsToLoadTmx) {
+				// Load TMX file first
+				PIXI.loader.add(this.tiledFile, this.tiledFile, { 
+					loadType: PIXI.loaders.Resource.LOAD_TYPE.XHR, 
+					xhrType: PIXI.loaders.Resource.XHR_RESPONSE_TYPE.TEXT 
 				});
+				
+				PIXI.loader.load(() => {
+					// Now parse TMX to get tileset images
+					this.loadTilesetImages(resolve, true);
+				});
+			} else {
+				// TMX already loaded, just load any missing tilesets
+				this.loadTilesetImages(resolve, false);
 			}
 		});
 	}
 
+	loadTilesetImages(resolve, fixPositions) {
+		// Parse TMX data to get tileset information
+		const tmxData = PIXI.loader.resources[this.tiledFile].data;
+		const mapData = TmxParser.parse(tmxData);
+		
+		// Collect all tileset image paths that need to be loaded
+		const tilesetPaths = [];
+		mapData.tilesets.forEach(tileset => {
+			if (tileset.image) {
+				const imagePath = this.resourcePath + tileset.image;
+				if (!PIXI.loader.resources[imagePath]) {
+					tilesetPaths.push(imagePath);
+				}
+			}
+		});
+		
+		// Load any missing tilesets
+		if (tilesetPaths.length > 0) {
+			tilesetPaths.forEach(path => {
+				PIXI.loader.add(path, path);
+			});
+			
+			PIXI.loader.load(() => {
+				this.setLevelObjects(fixPositions);
+				resolve();
+			});
+		} else {
+			// All tilesets already loaded
+			this.setLevelObjects(fixPositions);
+			resolve();
+		}
+	}
+
 	setLevelObjects(fixPositions) {
-		this.tiledMap = new PIXI.extras.TiledMap(this.tiledFile);
-		const tilePoints = this.getTilePointsByLayer(this.tiledMap, 'Ground');
+		// Parse TMX data
+		const tmxData = PIXI.loader.resources[this.tiledFile].data;
+		this.mapData = TmxParser.parse(tmxData);
+		
+		// Create tile map
+		this.tiledMap = new TileMap(this.mapData, this.resourcePath);
+		
+		// Get collision tiles from Ground layer
+		const tilePoints = this.getTilePointsByLayer('Ground');
 
 		this.collisionTiles = tilePoints.map(function (tp) {
-			return { x: tp.x * this.tiledMap.tileWidth, y: tp.y * this.tiledMap.tileHeight, width: this.tiledMap.tileWidth, height: this.tiledMap.tileHeight }
+			return { 
+				x: tp.x * this.tiledMap.tileWidth, 
+				y: tp.y * this.tiledMap.tileHeight, 
+				width: this.tiledMap.tileWidth, 
+				height: this.tiledMap.tileHeight 
+			}
 		}.bind(this));
 
 		const objects = this.getObjects();
@@ -49,10 +108,10 @@ export default class Level {
 	}
 
 	getObjects() {
-		const layer = this.tiledMap.layers.find(function (layer) {
-			return layer.name === 'Objects';
-		})
-		return layer.objects;
+		const layer = this.mapData.layers.find(function (layer) {
+			return layer.name === 'Objects' && layer.type === 'objectgroup';
+		});
+		return layer ? layer.objects : [];
 	}
 
 	fixPosition(gameObject) {
@@ -60,16 +119,22 @@ export default class Level {
 		gameObject.x -= this.tiledMap.tileWidth * 0.5;
 	}
 
-	getTilePointsByLayer(tiledMap, name) {
+	getTilePointsByLayer(name) {
 		const points = [];
 
-		const layer = tiledMap.layers.find(function (layer) {
+		const layer = this.mapData.layers.find(function (layer) {
 			return layer.name === name;
-		})
+		});
+		
+		if (!layer || !layer.tiles) return points;
 
 		layer.tiles.forEach(function (tile, index) {
-			if (tile != null && index < layer.map.width * layer.map.height)
-				points.push({x: index % tiledMap._width, y: Math.floor(index / tiledMap._width)});
+			if (tile != null && index < layer.width * layer.height) {
+				points.push({
+					x: index % layer.width, 
+					y: Math.floor(index / layer.width)
+				});
+			}
 		});
 
 		return points;
